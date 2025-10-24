@@ -1,0 +1,44 @@
+feat: initialize Next.js 15 full-stack boilerplate
+
+Create production-ready starter with Supabase, tRPC, and Tailwind CSS v4.
+
+Features:
+- Next.js 15 with App Router and TypeScript strict mode
+- Supabase authentication (email/password + Google OAuth)
+- tRPC v11 for type-safe API with React Query integration
+- PostgreSQL database with Row Level Security (RLS) policies
+- Tailwind CSS v4 with shadcn/ui component library
+- Domain-driven architecture (organized by feature)
+
+Authentication & Security:
+- Complete auth flow (signup, signin, password reset)
+- Protected routes with Next.js middleware
+- RLS policies for database-level authorization
+- Automatic profile creation via PostgreSQL triggers
+
+Example Features:
+- Profile management (name, timezone)
+- Notes CRUD with optimistic updates
+- Dark/light theme support
+- Responsive mobile-first design
+
+Database:
+- Migration system with Supabase CLI
+- Seeding script for development data
+- Type generation from database schema
+- Indexes for performance
+
+Developer Experience:
+- ESLint config that bans `any` types
+- Comprehensive documentation (README + HOW_TO_REPLICATE)
+- Database seeding for local development
+- Type safety from database to UI
+
+Tech Stack:
+- Next.js 15.3.3
+- Supabase (PostgreSQL + Auth)
+- tRPC 11.4.0
+- Tailwind CSS 4.1.10
+- TypeScript 5.8.3
+- React 19.1.0
+

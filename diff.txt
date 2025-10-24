@@ -1,0 +1,4962 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..b8e3dc9
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,10 @@
++# Supabase Configuration
++NEXT_PUBLIC_SUPABASE_URL=your_project_url
++NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
++
++# Optional: Google OAuth
++GOOGLE_CLIENT_ID=
++GOOGLE_CLIENT_SECRET=
++
++# Site URL (for OAuth callbacks)
++NEXT_PUBLIC_SITE_URL=http://localhost:3000
+diff --git a/.eslintrc.json b/.eslintrc.json
+new file mode 100644
+index 0000000..2ef9807
+--- /dev/null
++++ b/.eslintrc.json
+@@ -0,0 +1,17 @@
++{
++  "extends": [
++    "next/core-web-vitals",
++    "next/typescript"
++  ],
++  "rules": {
++    "@typescript-eslint/no-explicit-any": "error",
++    "@typescript-eslint/no-unused-vars": ["error", {
++      "argsIgnorePattern": "^_",
++      "varsIgnorePattern": "^_"
++    }],
++    "@typescript-eslint/consistent-type-imports": ["error", {
++      "prefer": "type-imports"
++    }]
++  }
++}
++
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..d158ca2
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,43 @@
++# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
++
++# dependencies
++/node_modules
++/.pnp
++.pnp.js
++.yarn/install-state.gz
++
++# testing
++/coverage
++
++# next.js
++/.next/
++/out/
++
++# production
++/build
++
++# misc
++.DS_Store
++*.pem
++
++# debug
++npm-debug.log*
++yarn-debug.log*
++yarn-error.log*
++
++# local env files
++.env*.local
++.env
++
++# vercel
++.vercel
++
++# typescript
++*.tsbuildinfo
++next-env.d.ts
++
++# Supabase
++.branches
++.temp
++.vscode/settings.json
++
+diff --git a/HOW_TO_REPLICATE.md b/HOW_TO_REPLICATE.md
+new file mode 100644
+index 0000000..e1a82a4
+--- /dev/null
++++ b/HOW_TO_REPLICATE.md
+@@ -0,0 +1,1053 @@
++# How to Replicate This Stack
++
++This guide shows you how to recreate this entire stack from scratch using exact commands. Perfect for learning how everything fits together or adapting for your own projects.
++
++## Table of Contents
++
++1. [Prerequisites](#prerequisites)
++2. [Step 1: Initialize Next.js](#step-1-initialize-nextjs)
++3. [Step 2: Install Core Dependencies](#step-2-install-core-dependencies)
++4. [Step 3: Configure Tailwind CSS v4](#step-3-configure-tailwind-css-v4)
++5. [Step 4: Set Up shadcn/ui](#step-4-set-up-shadcnui)
++6. [Step 5: Initialize Supabase](#step-5-initialize-supabase)
++7. [Step 6: Create Database Schema](#step-6-create-database-schema)
++8. [Step 7: Set Up Supabase Clients](#step-7-set-up-supabase-clients)
++9. [Step 8: Configure tRPC](#step-8-configure-trpc)
++10. [Step 9: Implement Authentication Middleware](#step-9-implement-authentication-middleware)
++11. [Step 10: Build Auth Pages](#step-10-build-auth-pages)
++12. [Step 11: Create Example CRUD](#step-11-create-example-crud-notes)
++13. [Step 12: Add Theme Support](#step-12-add-theme-support)
++14. [Step 13: Configure Supabase Auth](#step-13-configure-supabase-auth)
++15. [Step 14: TypeScript Best Practices](#step-14-typescript-best-practices)
++16. [Step 15: Database Seeding](#step-15-database-seeding)
++17. [Step 16: Testing and Validation](#step-16-testing-and-validation)
++18. [Opinionated Decisions](#opinionated-decisions)
++
++---
++
++## Prerequisites
++
++Before starting, install these tools:
++
++- **Node.js 20+** - [Installation Guide](https://nodejs.org/en/download/package-manager)
++- **pnpm** - [Installation Guide](https://pnpm.io/installation)
++  ```bash
++  npm install -g pnpm
++  ```
++- **Supabase Account** - [Sign Up](https://supabase.com/dashboard)
++- **Supabase CLI** - [Installation Guide](https://supabase.com/docs/guides/cli/getting-started)
++  ```bash
++  brew install supabase/tap/supabase  # macOS
++  # See docs for other platforms
++  ```
++- **Code Editor** - VS Code recommended
++
++---
++
++## Step 1: Initialize Next.js
++
++Create a new Next.js project with TypeScript, Tailwind CSS, and App Router:
++
++```bash
++pnpm create next-app@latest my-app --typescript --tailwind --app --src-dir --import-alias "@/*"
++cd my-app
++```
++
++**Documentation:**
++- [create-next-app](https://nextjs.org/docs/app/api-reference/cli/create-next-app) - CLI reference
++- [TypeScript in Next.js](https://nextjs.org/docs/app/building-your-application/configuring/typescript) - TypeScript configuration
++- [App Router](https://nextjs.org/docs/app) - App Router overview
++- [src Directory](https://nextjs.org/docs/app/building-your-application/configuring/src-directory) - Using src/ folder
++- [Path Aliases](https://nextjs.org/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases) - Import aliases
++
++**What this does:**
++- Creates a new Next.js 15 project
++- Enables TypeScript for type safety
++- Sets up Tailwind CSS for styling
++- Uses App Router (not Pages Router)
++- Organizes code in `src/` directory
++- Configures `@/*` import alias
++
++### Configure TypeScript Strict Mode
++
++Update `tsconfig.json` to enforce strict type checking:
++
++```json
++{
++  "compilerOptions": {
++    "target": "ES2017",
++    "strict": true,  // ← Enables all strict type checking options
++    "noEmit": true,
++    // ... other options
++  }
++}
++```
++
++**What `strict: true` enforces:**
++- `noImplicitAny` - Error on expressions with implied `any` type
++- `strictNullChecks` - `null` and `undefined` handled correctly
++- `strictFunctionTypes` - Function types checked properly
++- `strictBindCallApply` - `bind`, `call`, `apply` type-checked
++
++**Why ES2017 target:**
++- Modern JavaScript features (async/await, object spread)
++- Widely supported (Node 8+, all modern browsers)
++- Good balance of features and compatibility
++
++**Documentation:**
++- [TypeScript Compiler Options](https://www.typescriptlang.org/tsconfig) - Full reference
++- [Strict Mode](https://www.typescriptlang.org/tsconfig#strict) - What it enables
++
++### Add ESLint Configuration
++
++Create `.eslintrc.json` to ban `any` types and enforce best practices:
++
++```json
++{
++  "extends": [
++    "next/core-web-vitals",
++    "next/typescript"
++  ],
++  "rules": {
++    "@typescript-eslint/no-explicit-any": "error",
++    "@typescript-eslint/no-unused-vars": ["error", {
++      "argsIgnorePattern": "^_",
++      "varsIgnorePattern": "^_"
++    }],
++    "@typescript-eslint/consistent-type-imports": ["error", {
++      "prefer": "type-imports"
++    }]
++  }
++}
++```
++
++**What these rules do:**
++- `no-explicit-any` - **Bans `any` types** to maintain type safety
++- `no-unused-vars` - Catches unused variables (allows `_` prefix for intentionally unused)
++- `consistent-type-imports` - Enforces `import type` for type-only imports
++
++**Documentation:**
++- [ESLint Rules](https://eslint.org/docs/latest/rules/) - Core ESLint rules
++- [@typescript-eslint](https://typescript-eslint.io/rules/) - TypeScript-specific rules
++
++---
++
++## Step 2: Install Core Dependencies
++
++Install all required packages for the full stack:
++
++```bash
++# Supabase for authentication and database
++pnpm add @supabase/ssr @supabase/supabase-js
++
++# tRPC for type-safe API
++pnpm add @trpc/server@11.4.0 @trpc/client@11.4.0 @trpc/react-query@11.4.0 @trpc/next@11.4.0
++
++# Data fetching and validation
++pnpm add @tanstack/react-query@5.80.7 superjson zod
++
++# Styling utilities
++pnpm add class-variance-authority clsx tailwind-merge
++
++# UI utilities
++pnpm add sonner next-themes
++
++# Development tools
++pnpm add -D supabase
++```
++
++**Documentation Links:**
++
++**Supabase:**
++- [@supabase/ssr](https://supabase.com/docs/guides/auth/server-side/nextjs) - Server-side auth for Next.js
++- [@supabase/supabase-js](https://supabase.com/docs/reference/javascript) - JavaScript client library
++
++**tRPC:**
++- [tRPC](https://trpc.io/docs/quickstart) - Getting started guide
++- [tRPC with Next.js](https://trpc.io/docs/client/nextjs) - Next.js App Router integration
++
++**Data & Validation:**
++- [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) - React Query for data fetching
++- [superjson](https://github.com/blitz-js/superjson) - Serialize complex types (Date, Map, Set)
++- [Zod](https://zod.dev/) - TypeScript-first schema validation
++
++**Utilities:**
++- [class-variance-authority](https://cva.style/docs) - CVA for component variants
++- [clsx](https://github.com/lukeed/clsx) - Conditional className utility
++- [tailwind-merge](https://github.com/dcastil/tailwind-merge) - Merge Tailwind classes intelligently
++- [Sonner](https://sonner.emilkowal.ski/) - Toast notifications
++- [next-themes](https://github.com/pacocoursey/next-themes) - Dark mode support
++
++---
++
++## Step 3: Configure Tailwind CSS v4
++
++Update to Tailwind CSS v4 with the new @import syntax:
++
++**1. Update `postcss.config.mjs`:**
++
++```js
++export default {
++  plugins: {
++    '@tailwindcss/postcss': {},
++  },
++};
++```
++
++**2. Update `src/app/globals.css`:**
++
++```css
++@import "tailwindcss";
++
++@theme inline {
++  --color-primary: /* your colors */;
++}
++
++@layer base {
++  * {
++    @apply border-border;
++  }
++  body {
++    @apply bg-background text-foreground;
++  }
++}
++```
++
++**Documentation:**
++- [Tailwind CSS v4 Beta](https://tailwindcss.com/docs/v4-beta) - What's new in v4
++- [@tailwindcss/postcss](https://tailwindcss.com/docs/installation/using-postcss) - PostCSS plugin setup
++- [@theme directive](https://tailwindcss.com/docs/theme) - Inline theme configuration
++- [CSS Variables](https://tailwindcss.com/docs/customizing-colors#using-css-variables) - Dynamic theming with CSS vars
++
++**Key Changes:**
++- `@import "tailwindcss"` replaces individual layer imports
++- `@theme inline` for custom theme tokens
++- More performant than v3
++
++---
++
++## Step 4: Set Up shadcn/ui
++
++Initialize shadcn/ui and install base components:
++
++```bash
++# Initialize shadcn/ui
++pnpm dlx shadcn@latest init
++# Select: New York style, CSS variables, neutral base color
++
++# Add essential components
++pnpm dlx shadcn@latest add button card input label dialog dropdown-menu select
++```
++
++**Documentation:**
++- [shadcn/ui Installation](https://ui.shadcn.com/docs/installation/next) - Next.js setup guide
++- [shadcn/ui CLI](https://ui.shadcn.com/docs/cli) - CLI commands reference
++- [Theming Guide](https://ui.shadcn.com/docs/theming) - Customize colors and styling
++- [Component List](https://ui.shadcn.com/docs/components) - All available components
++
++**What this does:**
++- Installs shadcn/ui configuration
++- Adds base UI components to your project
++- Components are copied to `src/components/ui/`
++- Full control - you own the code!
++
++---
++
++## Step 5: Initialize Supabase
++
++Set up Supabase for your project:
++
++```bash
++# Initialize Supabase in your project
++npx supabase init
++
++# Log in to Supabase CLI
++npx supabase login
++
++# Link to your remote Supabase project
++npx supabase link --project-ref your-project-ref
++```
++
++**Get your project ref:**
++1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
++2. Create a new project (or use existing)
++3. Go to Project Settings → General
++4. Copy the "Reference ID"
++
++**Documentation:**
++- [Supabase CLI](https://supabase.com/docs/guides/cli) - CLI overview
++- [supabase init](https://supabase.com/docs/reference/cli/supabase-init) - Initialize local config
++- [supabase login](https://supabase.com/docs/reference/cli/supabase-login) - Authenticate CLI
++- [supabase link](https://supabase.com/docs/reference/cli/supabase-link) - Link to remote project
++- [Managing Config](https://supabase.com/docs/guides/cli/managing-config) - Configuration guide
++
++---
++
++## Step 6: Create Database Schema
++
++Create and apply database migrations:
++
++```bash
++# Create a new migration file
++npx supabase migration new initial_schema
++```
++
++**Edit the migration file** (`supabase/migrations/XXXXXX_initial_schema.sql`):
++
++```sql
++-- User profiles table
++CREATE TABLE profiles (
++  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
++  email TEXT NOT NULL UNIQUE,
++  name TEXT,
++  timezone TEXT DEFAULT 'UTC',
++  created_at TIMESTAMPTZ DEFAULT NOW(),
++  updated_at TIMESTAMPTZ DEFAULT NOW()
++);
++
++-- Notes table (example CRUD)
++CREATE TABLE notes (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
++  title TEXT NOT NULL,
++  content TEXT DEFAULT '',
++  created_at TIMESTAMPTZ DEFAULT NOW(),
++  updated_at TIMESTAMPTZ DEFAULT NOW()
++);
++
++-- Enable Row Level Security
++ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
++ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
++
++-- RLS Policies
++CREATE POLICY "Users can view own profile" ON profiles
++  FOR SELECT USING (auth.uid() = id);
++
++CREATE POLICY "Users can update own profile" ON profiles
++  FOR UPDATE USING (auth.uid() = id);
++
++CREATE POLICY "Users can manage own notes" ON notes
++  FOR ALL USING (auth.uid() = user_id);
++
++-- Trigger to create profile on signup
++CREATE OR REPLACE FUNCTION handle_new_user()
++RETURNS TRIGGER AS $$
++BEGIN
++  INSERT INTO profiles (id, email, name)
++  VALUES (NEW.id, NEW.email, SPLIT_PART(NEW.email, '@', 1));
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql SECURITY DEFINER;
++
++CREATE TRIGGER on_auth_user_created
++  AFTER INSERT ON auth.users
++  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
++```
++
++#### How Triggers Work: Synchronous Execution
++
++**Important:** PostgreSQL triggers are **synchronous** and part of the transaction.
++
++When a user signs up:
++1. Supabase Auth inserts into `auth.users`
++2. **Trigger fires immediately** (blocks the INSERT)
++3. Profile is created
++4. If trigger succeeds → user creation completes
++5. If trigger fails → entire transaction rolls back (no user created)
++
++**This means:**
++- ✅ Profile **always** exists when user is created
++- ✅ Can't have orphaned users without profiles
++- ✅ Atomic operation (all-or-nothing)
++- ⚠️ Trigger errors prevent user signup (good for data integrity)
++
++**Response time:** The signup request waits for the trigger (~5-10ms overhead).
++
++**Why this matters:**
++- Your application can assume profiles exist for all users
++- No race conditions or async timing issues
++- Database enforces data integrity automatically
++
++**Documentation:**
++- [PostgreSQL Triggers](https://www.postgresql.org/docs/current/triggers.html) - How triggers work
++- [Trigger Timing](https://www.postgresql.org/docs/current/trigger-definition.html) - BEFORE vs AFTER
++- [Supabase Auth Triggers](https://supabase.com/docs/guides/auth/managing-user-data#using-triggers) - User creation patterns
++
++**Apply migrations:**
++
++```bash
++# Apply to local database
++npx supabase db reset
++
++# Push to remote (production)
++npx supabase db push
++
++# Generate TypeScript types from database
++npx supabase gen types typescript --local > src/lib/database.types.ts
++```
++
++**What type generation does:**
++
++Reads your database schema and creates TypeScript types for:
++- Each table's Row, Insert, and Update types
++- Database functions
++- Enums and composite types
++
++This gives you autocomplete and type safety when using the Supabase client!
++
++**Documentation:**
++- [Database Migrations](https://supabase.com/docs/guides/cli/local-development#database-migrations) - Migration workflow
++- [supabase migration new](https://supabase.com/docs/reference/cli/supabase-migration-new) - Create migration
++- [supabase db push](https://supabase.com/docs/reference/cli/supabase-db-push) - Apply to remote
++- [Generating Types](https://supabase.com/docs/guides/api/rest/generating-types) - TypeScript type generation
++- [Row Level Security](https://supabase.com/docs/guides/auth/row-level-security) - RLS policies guide
++
++---
++
++## Step 7: Set Up Supabase Clients
++
++Create server and browser Supabase clients:
++
++**1. Server Client** (`src/lib/supabase/server.ts`):
++
++```typescript
++import { createServerClient } from '@supabase/ssr';
++import { cookies } from 'next/headers';
++
++export async function createClient() {
++  const cookieStore = await cookies();
++
++  return createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return cookieStore.getAll();
++        },
++        setAll(cookiesToSet) {
++          cookiesToSet.forEach(({ name, value, options }) =>
++            cookieStore.set(name, value, options)
++          );
++        },
++      },
++    }
++  );
++}
++```
++
++**2. Browser Client** (`src/lib/supabase/client.ts`):
++
++```typescript
++import { createBrowserClient } from '@supabase/ssr';
++
++export function createClient() {
++  return createBrowserClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
++  );
++}
++```
++
++**Documentation:**
++- [Supabase Auth with Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs) - Complete integration guide
++- [SSR Package](https://supabase.com/docs/reference/javascript/ssr-package) - @supabase/ssr API reference
++- [createServerClient](https://supabase.com/docs/reference/javascript/initializing#create-a-server-client) - Server setup
++- [createBrowserClient](https://supabase.com/docs/reference/javascript/initializing#create-a-browser-client) - Browser setup
++- [Cookie Management](https://supabase.com/docs/guides/auth/server-side/nextjs#creating-a-supabase-client) - SSR cookie handling
++
++**Why two clients?**
++- Server: For Server Components, API routes, middleware
++- Browser: For Client Components, client-side auth
++
++---
++
++## Step 8: Configure tRPC
++
++Set up tRPC for type-safe APIs:
++
++**1. Server Setup** (`src/server/trpc/index.ts`):
++
++```typescript
++import { initTRPC, TRPCError } from '@trpc/server';
++import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
++import { createClient } from '@/lib/supabase/server';
++import superjson from 'superjson';
++import { ZodError } from 'zod';
++
++export async function createContext(opts: FetchCreateContextFnOptions) {
++  const supabase = await createClient();
++  const { data: { user } } = await supabase.auth.getUser();
++
++  return {
++    supabase,
++    user,
++  };
++}
++
++const t = initTRPC.context<Context>().create({
++  transformer: superjson,
++  errorFormatter({ shape, error }) {
++    return {
++      ...shape,
++      data: {
++        ...shape.data,
++        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
++      },
++    };
++  },
++});
++
++export const router = t.router;
++export const publicProcedure = t.procedure;
++
++const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
++  if (!ctx.user) {
++    throw new TRPCError({ code: 'UNAUTHORIZED' });
++  }
++  return next({ ctx: { ...ctx, user: ctx.user } });
++});
++
++export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
++```
++
++**2. Client Setup** (`src/lib/trpc/client.tsx`):
++
++```typescript
++'use client';
++
++import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
++import { httpBatchLink } from '@trpc/client';
++import { createTRPCReact } from '@trpc/react-query';
++import { useState } from 'react';
++import superjson from 'superjson';
++import type { AppRouter } from '@/server/routers';
++
++export const api = createTRPCReact<AppRouter>();
++
++export function TRPCProvider({ children }: { children: React.ReactNode }) {
++  const [queryClient] = useState(() => new QueryClient());
++  const [trpcClient] = useState(() =>
++    api.createClient({
++      links: [
++        httpBatchLink({
++          url: '/api/trpc',
++          transformer: superjson,
++        }),
++      ],
++    })
++  );
++
++  return (
++    <api.Provider client={trpcClient} queryClient={queryClient}>
++      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
++    </api.Provider>
++  );
++}
++```
++
++**3. HTTP Handler** (`src/app/api/trpc/[trpc]/route.ts`):
++
++```typescript
++import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
++import { appRouter } from '@/server/routers';
++import { createContext } from '@/server/trpc';
++
++const handler = (req: Request) =>
++  fetchRequestHandler({
++    endpoint: '/api/trpc',
++    req,
++    router: appRouter,
++    createContext,
++  });
++
++export { handler as GET, handler as POST };
++```
++
++**Documentation:**
++- [tRPC Quickstart](https://trpc.io/docs/quickstart) - Getting started
++- [tRPC with App Router](https://trpc.io/docs/client/tanstack-react-query/server-components) - React Server Components
++- [tRPC Next.js Setup](https://trpc.io/docs/client/nextjs/setup) - Pages Router (reference)
++- [Context](https://trpc.io/docs/server/context) - Creating request context
++- [Procedures](https://trpc.io/docs/server/procedures) - Queries and mutations
++- [React Query Integration](https://trpc.io/docs/client/react) - React hooks
++- [Error Handling](https://trpc.io/docs/server/error-handling) - Custom errors
++- [superjson Transformer](https://trpc.io/docs/server/data-transformers#using-superjson) - Serialize complex types
++
++**What you get:**
++- Full type safety from client to server
++- Automatic TypeScript inference
++- Built-in React hooks
++- Error handling with Zod validation
++
++---
++
++## Step 9: Implement Authentication Middleware
++
++Protect routes with Next.js middleware:
++
++**Create** `src/middleware.ts`:
++
++```typescript
++import { createServerClient } from '@supabase/ssr';
++import { NextResponse, type NextRequest } from 'next/server';
++
++export async function middleware(request: NextRequest) {
++  let response = NextResponse.next();
++
++  const supabase = createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return request.cookies.getAll();
++        },
++        setAll(cookiesToSet) {
++          cookiesToSet.forEach(({ name, value, options }) =>
++            response.cookies.set(name, value, options)
++          );
++        },
++      },
++    }
++  );
++
++  const { data: { user } } = await supabase.auth.getUser();
++
++  // Protect authenticated routes
++  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
++    return NextResponse.redirect(new URL('/signin', request.url));
++  }
++
++  // Redirect authenticated users away from auth pages
++  if (user && request.nextUrl.pathname.startsWith('/signin')) {
++    return NextResponse.redirect(new URL('/dashboard', request.url));
++  }
++
++  return response;
++}
++
++export const config = {
++  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
++};
++```
++
++**Documentation:**
++- [Next.js Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) - Middleware basics
++- [Supabase Auth Helpers](https://supabase.com/docs/guides/auth/server-side/creating-a-client) - Server-side patterns
++- [Middleware with Supabase](https://supabase.com/docs/guides/auth/server-side/nextjs#creating-a-supabase-client-in-middleware) - Full example
++- [Route Protection](https://nextjs.org/docs/app/building-your-application/routing/middleware#matching-paths) - Path matching
++
++---
++
++## Step 10: Build Auth Pages
++
++Create authentication pages (signin, signup, forgot/reset password).
++
++See the boilerplate files for complete implementations:
++- `src/app/signin/page.tsx` - Sign in with email/password and Google
++- `src/app/signup/page.tsx` - User registration
++- `src/app/forgot-password/page.tsx` - Password recovery
++- `src/app/reset-password/page.tsx` - Password reset
++- `src/app/auth/callback/route.ts` - OAuth callback handler
++
++**Documentation:**
++- [Supabase Auth](https://supabase.com/docs/guides/auth) - Auth overview
++- [Email/Password Auth](https://supabase.com/docs/guides/auth/auth-email) - Email authentication
++- [OAuth with Google](https://supabase.com/docs/guides/auth/social-login/auth-google) - Google OAuth setup
++- [Password Reset](https://supabase.com/docs/guides/auth/auth-password-reset) - Reset flow
++- [Email Templates](https://supabase.com/docs/guides/auth/auth-email-templates) - Customize emails
++- [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls) - OAuth callbacks
++
++---
++
++## Step 11: Create Example CRUD (Notes)
++
++Build a complete CRUD feature to demonstrate patterns:
++
++**1. Database Operations** (`src/server/db/note.ts`)
++**2. tRPC Router** (`src/server/routers/note.ts`)
++**3. React Component** (`src/components/notes/NotesManager.tsx`)
++
++See boilerplate files for complete implementations.
++
++**Documentation:**
++- [tRPC Mutations](https://trpc.io/docs/client/react/useMutation) - Creating mutations
++- [tRPC Queries](https://trpc.io/docs/client/react/useQuery) - Fetching data
++- [Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates) - Instant UI feedback
++- [Input Validation](https://trpc.io/docs/server/validators) - Zod with tRPC
++- [Supabase CRUD](https://supabase.com/docs/reference/javascript/select) - Database operations
++
++**Patterns demonstrated:**
++- Type-safe API calls
++- Optimistic UI updates
++- Form validation with Zod
++- Error handling
++- Loading states
++
++---
++
++## Step 12: Add Theme Support
++
++Implement dark/light mode:
++
++**1. Theme Provider** (`src/lib/theme-provider.tsx`)
++**2. Add to root layout**
++**3. Create theme toggle component**
++
++**Documentation:**
++- [next-themes](https://github.com/pacocoursey/next-themes#readme) - Theme provider documentation
++- [Tailwind Dark Mode](https://tailwindcss.com/docs/dark-mode) - Dark mode configuration
++- [CSS Variables Theming](https://ui.shadcn.com/docs/theming) - shadcn/ui theming
++
++---
++
++## Step 13: Configure Supabase Auth
++
++Configure authentication in Supabase Dashboard:
++
++1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
++2. Select your project
++3. Go to Authentication → URL Configuration
++4. Add redirect URLs:
++   - `http://localhost:3000/auth/callback` (development)
++   - `https://yourdomain.com/auth/callback` (production)
++5. Go to Authentication → Providers
++6. Enable Email provider
++7. (Optional) Configure Google OAuth:
++   - Enable Google provider
++   - Add Google Client ID and Secret
++   - Configure authorized redirect URIs in Google Cloud Console
++
++**Documentation:**
++- [Supabase Dashboard](https://supabase.com/dashboard) - Project dashboard
++- [Auth Settings](https://supabase.com/docs/guides/auth/auth-smtp) - SMTP configuration
++- [OAuth Providers](https://supabase.com/docs/guides/auth/social-login) - Provider setup
++- [Email Templates](https://supabase.com/docs/guides/auth/auth-email-templates) - Customization
++
++---
++
++## Step 14: TypeScript Best Practices
++
++### Avoiding `any` Types
++
++Our ESLint configuration bans `any` types to maintain type safety. Here's how to handle different scenarios:
++
++#### Bad - Using `any`:
++```typescript
++const data: any = await fetch('/api/data');
++// No type safety, no autocomplete, defeats TypeScript
++```
++
++#### Good - Proper Typing:
++```typescript
++type ApiResponse = { notes: Note[] };
++const response = await fetch('/api/data');
++const data: ApiResponse = await response.json();
++// Full type safety and autocomplete
++```
++
++#### Good - Using `unknown`:
++```typescript
++const data: unknown = await someExternalLib();
++
++// Type guard to validate
++if (isNoteArray(data)) {
++  // TypeScript now knows data is Note[]
++  data.forEach(note => console.log(note.title));
++}
++```
++
++#### When You MUST Use `any` (Rare):
++```typescript
++// Inline override with explanation
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++const legacyLib: any = require('old-untyped-library');
++```
++
++### Better Alternatives to `any`
++
++**For object maps:**
++```typescript
++// ❌ Bad
++const config: any = { key: 'value' };
++
++// ✅ Good
++const config: Record<string, unknown> = { key: 'value' };
++```
++
++**For function parameters:**
++```typescript
++// ❌ Bad
++function process(data: any) { }
++
++// ✅ Good - Use generic
++function process<T>(data: T) { }
++
++// ✅ Good - Use unknown + validation
++function process(data: unknown) {
++  if (isValidData(data)) {
++    // Now data is typed
++  }
++}
++```
++
++**For arrays:**
++```typescript
++// ❌ Bad
++const items: any[] = [1, 'hello', true];
++
++// ✅ Good - Use union
++const items: (number | string | boolean)[] = [1, 'hello', true];
++
++// ✅ Better - Create specific type
++type Item = { id: number; name: string };
++const items: Item[] = [{ id: 1, name: 'test' }];
++```
++
++**Documentation:**
++- [TypeScript Handbook - Everyday Types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html)
++- [unknown vs any](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown)
++- [Type Guards](https://www.typescriptlang.org/docs/handbook/2/narrowing.html)
++
++---
++
++## Step 15: Database Seeding
++
++Create `supabase/seed.sql` for development data:
++
++```sql
++-- =============================================================================
++-- SEED DATA - Development and Testing
++-- =============================================================================
++-- Run with: npx supabase db reset (automatically runs seed.sql)
++
++DO $$
++DECLARE
++  v_user_id UUID;
++BEGIN
++  -- Get first user (create via signup or dashboard first)
++  SELECT id INTO v_user_id FROM auth.users LIMIT 1;
++  
++  IF v_user_id IS NOT NULL THEN
++    -- Seed example notes
++    INSERT INTO notes (user_id, title, content) VALUES
++      (v_user_id, 'Welcome!', 'This is your first note'),
++      (v_user_id, 'Getting Started', 'Tips for using the app'),
++      (v_user_id, 'Example Note', 'You can create, edit, delete');
++      
++    RAISE NOTICE 'Seeded data for user %', v_user_id;
++  ELSE
++    RAISE NOTICE 'No users found. Create a user first.';
++  END IF;
++END $$;
++```
++
++**Update `supabase/config.toml`:**
++```toml
++[db.seed]
++enabled = true
++sql_paths = ["./seed.sql"]
++```
++
++**Documentation:**
++- [Supabase Local Development](https://supabase.com/docs/guides/cli/local-development) - Using seed files
++- [PostgreSQL DO Blocks](https://www.postgresql.org/docs/current/sql-do.html) - Anonymous code blocks
++
++---
++
++## Step 16: Testing and Validation
++
++Verify everything works:
++
++```bash
++# Type check
++pnpm tsc --noEmit
++
++# Lint (will error on any types)
++pnpm lint
++
++# Build for production
++pnpm build
++
++# Start development server
++pnpm dev
++```
++
++**Test the flow:**
++1. Sign up with email
++2. Verify email (check Supabase Inbucket in local dev)
++3. Create a note
++4. Edit and delete notes
++5. Sign out and sign in again
++6. Test dark/light mode toggle
++
++**Documentation:**
++- [Next.js Testing](https://nextjs.org/docs/app/building-your-application/testing) - Testing overview
++- [Type Safety](https://trpc.io/docs/quickstart#end-to-end-type-safety) - tRPC benefits
++- [RLS Testing](https://supabase.com/docs/guides/auth/row-level-security#testing-policies) - Test policies
++
++---
++
++## Opinionated Decisions
++
++This stack makes specific choices. Here's the reasoning:
++
++### **SQL Functions vs TypeScript: The Hybrid Approach**
++
++**Why we use BOTH:** Different tools for different jobs
++
++This boilerplate uses **TypeScript for simple CRUD** and **SQL functions for complex operations**. This is intentional.
++
++#### When to Use SQL Functions
++
++**1. Batch Operations**
++
++Example from `001_initial_schema.sql`:
++```sql
++CREATE FUNCTION handle_new_user() RETURNS TRIGGER AS $$
++BEGIN
++  INSERT INTO profiles (id, email, name)
++  VALUES (NEW.id, NEW.email, SPLIT_PART(NEW.email, '@', 1));
++  RETURN NEW;
++END;
++$$;
++```
++
++**Why SQL:** Automatic execution on user creation. Can't be forgotten or bypassed.
++
++**2. Complex Multi-Step Operations**
++
++For operations creating many related records (e.g., initializing user data, batch imports):
++- **SQL**: 1 function call, 1 transaction, ~50ms
++- **TypeScript**: Many round-trips or complex batching, ~2000ms+
++
++**3. Data Integrity**
++
++SQL functions run in database transactions - either all succeed or all fail. No partial states.
++
++**4. Timezone Operations**
++
++PostgreSQL timezone handling is battle-tested:
++```sql
++(date::TEXT || ' ' || time::TEXT || ' ' || timezone)::TIMESTAMPTZ
++```
++
++vs complex JavaScript timezone libraries.
++
++#### When to Use TypeScript/tRPC
++
++**1. Simple CRUD** (see `src/server/db/note.ts`)
++
++```typescript
++async create(data: { title: string; content?: string }) {
++  const { data: note } = await this.supabase
++    .from('notes')
++    .insert({ user_id: this.user.id, ...data })
++    .select()
++    .single();
++  return note;
++}
++```
++
++**Why TypeScript:**
++- Full type safety
++- Easy to test
++- Great developer experience
++- Type inference from Supabase
++
++**2. Business Logic That Changes Frequently**
++
++Application code is easier to iterate on than database functions.
++
++**3. External API Integration**
++
++TypeScript is better for HTTP requests, webhooks, etc.
++
++#### When SQL Wins: Real Example
++
++Imagine creating related records for a multi-day event scheduler (100+ records with complex relationships):
++
++- **SQL function**: Single transaction, ~50ms
++- **TypeScript**: Multiple network calls, ~5,000ms+
++
++**For simple operations**, performance is similar. See [README.md](./README.md#performance-benchmarks) for detailed benchmarks and complete trade-offs table.
++
++---
++
++### **tRPC over REST/GraphQL**
++
++**Why:** End-to-end type safety without code generation
++
++- REST requires manual type synchronization or code generation
++- GraphQL requires schema definitions and codegen
++- tRPC gives you types automatically from your TypeScript code
++
++[Read more](https://trpc.io/docs/main/introduction)
++
++### **Supabase over Other Backends**
++
++**Why:** All-in-one backend with PostgreSQL
++
++- PostgreSQL is battle-tested and powerful
++- Built-in authentication saves weeks of development
++- Row Level Security provides database-level authorization
++- Real-time subscriptions without additional setup
++
++[Read more](https://supabase.com/docs)
++
++### **pnpm over npm/yarn**
++
++**Why:** Faster and more efficient
++
++- Up to 2x faster installation
++- Saves gigabytes with content-addressable storage
++- Stricter, prevents phantom dependencies
++
++[Benchmarks](https://pnpm.io/benchmarks)
++
++### **Domain-Driven Structure**
++
++**Why:** Scales better for complex applications
++
++- Easy to find all code related to a feature
++- Clear boundaries between domains
++- Multiple developers can work independently
++- Better than organizing by technical layers
++
++[Discussion](https://profy.dev/article/react-folder-structure)
++
++### **Tailwind CSS v4**
++
++**Why:** Performance and better DX
++
++- New engine is significantly faster
++- Improved @import and @theme syntax
++- Better integration with modern tools
++
++[Migration Guide](https://tailwindcss.com/docs/upgrade-guide)
++
++### **shadcn/ui Copy/Paste Approach**
++
++**Why:** Full control over components
++
++- Own the code, modify as needed
++- No npm package bloat
++- Understand exactly how components work
++- Built on Radix UI primitives
++
++[Philosophy](https://ui.shadcn.com/docs)
++
++---
++
++## Next Steps
++
++You now have a complete understanding of how this stack is built! 
++
++- **Customize** - Make it your own
++- **Extend** - Add features like file uploads, webhooks, etc.
++- **Deploy** - Push to Vercel or your preferred host
++- **Learn** - Dive deeper into each technology
++
++**Happy building!** 🚀
++
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..de45ef3
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,665 @@
++# Next.js Full-Stack Starter
++
++Production-ready boilerplate with Next.js 15, Supabase, tRPC v11, and Tailwind CSS v4.
++
++> **Opinionated Setup** - This uses specific architectural patterns. See [Why These Choices?](#🎯-why-these-choices) for detailed rationale.
++
++**Want to build this from scratch?** See [HOW_TO_REPLICATE.md](./HOW_TO_REPLICATE.md) for a complete step-by-step guide.
++
++## Table of Contents
++
++- [Quick Start](#🚀-quick-start)
++- [What's Included](#✨-whats-included)
++- [Tech Stack](#📚-tech-stack)
++- [Architecture](#🏗️-architecture)
++  - [Database-Level Logic](#database-level-logic-with-postgresql)
++  - [End-to-End Type Safety](#end-to-end-type-safety-with-trpc)
++  - [Row Level Security](#row-level-security-rls)
++  - [Domain-Driven Organization](#domain-driven-organization)
++- [Project Structure](#📁-project-structure)
++- [Configuration](#🔧-configuration)
++  - [Environment Variables](#environment-variables)
++  - [Supabase Configuration](#supabase-configuration)
++  - [TypeScript & ESLint](#typescript--eslint)
++  - [Database Seeding](#database-seeding)
++- [Development](#🛠️-development)
++  - [Commands](#commands)
++  - [Adding New Features](#adding-new-features)
++- [Deployment](#🚢-deployment)
++- [Why These Choices?](#🎯-why-these-choices)
++- [Learn More](#📖-learn-more)
++
++---
++
++## 🚀 Quick Start
++
++```bash
++# Install dependencies
++pnpm install
++
++# Configure environment
++cp .env.example .env.local
++# Add your Supabase credentials to .env.local
++
++# Set up Supabase
++npx supabase login
++npx supabase link --project-ref your-project-ref
++npx supabase db push
++
++# Generate TypeScript types from database
++pnpm db:types
++
++# Start development
++pnpm dev
++```
++
++Visit [http://localhost:3000](http://localhost:3000)
++
++**Need help getting credentials?** See [Configuration](#🔧-configuration) section below.
++
++---
++
++## ✨ What's Included
++
++- ✅ **Complete Authentication** - Email/password + Google OAuth
++- ✅ **Type-Safe API** - tRPC with end-to-end TypeScript
++- ✅ **Database Security** - Row Level Security (RLS) policies
++- ✅ **Example CRUD** - Notes feature demonstrating all patterns
++- ✅ **Dark/Light Mode** - Theme support with next-themes
++- ✅ **Strict TypeScript** - No `any` types allowed (ESLint enforced)
++- ✅ **Responsive Design** - Mobile-first with Tailwind CSS v4
++- ✅ **Database Seeding** - Example seed data for development
++
++---
++
++## 📚 Tech Stack
++
++| Technology | Version | Purpose | Documentation |
++|-----------|---------|---------|---------------|
++| **Next.js** | 15.3 | React framework | [Docs](https://nextjs.org/docs) |
++| **Supabase** | Latest | PostgreSQL + Auth + RLS | [Docs](https://supabase.com/docs) |
++| **tRPC** | 11.4 | Type-safe API | [Docs](https://trpc.io/docs) |
++| **Tailwind CSS** | 4.1 | Utility-first styling | [Docs](https://tailwindcss.com/docs) |
++| **shadcn/ui** | Latest | Component library | [Docs](https://ui.shadcn.com/) |
++| **TypeScript** | 5.8 | Type safety | [Docs](https://typescriptlang.org/docs) |
++
++---
++
++## 🏗️ Architecture
++
++### Database-Level Logic with PostgreSQL
++
++This boilerplate leverages PostgreSQL's powerful features like functions and triggers alongside the Supabase JavaScript client.
++
++#### PostgreSQL Functions & Triggers
++
++**1. Triggers (automatic execution)**
++
++Example: Auto-create profile when user signs up
++```sql
++CREATE FUNCTION handle_new_user() RETURNS TRIGGER AS $$
++BEGIN
++  INSERT INTO profiles (id, email, name)
++  VALUES (NEW.id, NEW.email, SPLIT_PART(NEW.email, '@', 1));
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql SECURITY DEFINER;
++
++CREATE TRIGGER on_auth_user_created
++  AFTER INSERT ON auth.users
++  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
++```
++
++**How it connects to Supabase Auth:**
++
++1. User calls `supabase.auth.signUp({ email, password })`
++2. Supabase Auth inserts into `auth.users` table
++3. PostgreSQL detects INSERT on `auth.users`
++4. Trigger fires automatically with `NEW` = the new user row
++5. Function accesses `NEW.id`, `NEW.email` from the inserted row
++6. Profile is created using the new user's data
++7. Transaction completes (or rolls back if trigger fails)
++
++**Why:** Automatic, guaranteed execution. Profile always exists. (~5ms overhead)
++
++**2. Complex multi-step operations** - Update multiple tables atomically (all succeed or all fail)
++
++**3. Data integrity** - Rules enforced at database level, can't be bypassed
++
++**For everything else:** Use the Supabase JavaScript client (see `src/server/db/note.ts`):
++```typescript
++async list() {
++  const { data } = await this.supabase
++    .from('notes')
++    .select('*')
++    .eq('user_id', this.user.id);
++  return data || [];
++}
++```
++
++**Why:** Full TypeScript types, easy testing, familiar patterns.
++
++**Learn more:**
++- [Supabase Database Functions](https://supabase.com/docs/guides/database/functions)
++- [PostgreSQL Triggers](https://www.postgresql.org/docs/current/triggers.html)
++
++---
++
++### End-to-End Type Safety with tRPC
++
++tRPC provides automatic type safety from your database to your UI **with minimal setup**.
++
++#### How Types Flow
++
++```
++Database (PostgreSQL)
++    ↓
++Supabase CLI (generates src/lib/database.types.ts)
++    ↓
++Supabase Client (typed with Database types)
++    ↓
++tRPC Router (TypeScript functions)
++    ↓
++tRPC Client (automatic type inference)
++    ↓
++React Components (fully typed data)
++```
++
++#### Real Example
++
++**1. Database operation** (`src/server/db/note.ts`):
++```typescript
++async list() {
++  const { data } = await this.supabase
++    .from('notes')
++    .select('*')
++    .eq('user_id', this.user.id);
++  return data || [];  // ← Supabase infers type from 'notes' table
++}
++```
++
++**2. tRPC router** (`src/server/routers/note.ts`):
++```typescript
++export const noteRouter = router({
++  list: protectedProcedure.query(async ({ ctx }) => {
++    const db = new Database(ctx.supabase, ctx.user);
++    return db.noteList();  // ← Return type inferred from db.noteList()
++  }),
++});
++```
++
++**3. React component** (`src/components/notes/NotesManager.tsx`):
++```typescript
++const { data: notes } = api.note.list.useQuery();
++//     ^? Note[] - Fully typed, autocomplete works!
++
++notes.map(note => (
++  <div key={note.id}>
++    {note.title}  // ← TypeScript knows all fields
++  </div>
++))
++```
++
++#### Generating Database Types
++
++After creating migrations, generate TypeScript types:
++
++```bash
++npx supabase gen types typescript --local > src/lib/database.types.ts
++```
++
++This creates type definitions for all your tables:
++```typescript
++export type Database = {
++  public: {
++    Tables: {
++      notes: {
++        Row: { id: string; title: string; ... }
++        Insert: { title: string; content?: string; ... }
++        Update: { title?: string; ... }
++      }
++    }
++  }
++}
++```
++
++#### The Magic
++
++**Automatic type inference across the stack:**
++- Supabase queries are typed from `database.types.ts`
++- tRPC routers infer types from function returns
++- React components get types from tRPC procedures
++- **Change database → Run type gen → Get TypeScript errors → Fix with autocomplete**
++
++**If you change the database:**
++1. Update migration (`npx supabase migration new your_change`)
++2. Apply migration (`npx supabase db push`)
++3. Regenerate types (`npx supabase gen types typescript --local > src/lib/database.types.ts`)
++4. TypeScript errors guide you to update components
++5. Deploy with confidence
++
++**Learn more:**
++- [Generating Supabase Types](https://supabase.com/docs/guides/api/rest/generating-types)
++- [tRPC Type Safety](https://trpc.io/docs/quickstart#end-to-end-type-safety)
++
++---
++
++### Row Level Security (RLS)
++
++PostgreSQL's RLS enforces authorization **at the database level**, not in application code.
++
++#### The Security Problem
++
++**Traditional Approach (❌):**
++```typescript
++// Every query must manually check permissions
++async getNotes(userId: string) {
++  const notes = await db.notes.findMany();
++  // BUG: Forgot to filter by user!
++  return notes; // ← Security vulnerability! Returns ALL notes
++}
++```
++
++**With RLS (✅):**
++```sql
++-- Set once in migration
++CREATE POLICY "Users see own notes" ON notes
++  FOR SELECT USING (auth.uid() = user_id);
++```
++
++```typescript
++// Database automatically filters - can't forget!
++async getNotes() {
++  const { data } = await this.supabase
++    .from('notes')
++    .select('*');
++  // ← Only returns current user's notes, guaranteed
++  return data;
++}
++```
++
++#### Benefits
++
++1. **Can't Be Bypassed** - Works with direct SQL, Supabase Studio, all database tools
++2. **Single Source of Truth** - Authorization in migrations, applies everywhere
++3. **Performance** - Database-level filtering uses indexes efficiently
++4. **Audit Trail** - Policies version controlled and easy to review
++
++**Learn more:**
++- [PostgreSQL RLS Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
++- [Supabase RLS Guide](https://supabase.com/docs/guides/auth/row-level-security)
++- [RLS Best Practices](https://supabase.com/docs/guides/database/postgres/row-level-security#security-best-practices)
++
++---
++
++### Domain-Driven Organization
++
++Code is organized by **business domain** (profile, note), not technical layer (controllers, models).
++
++```
++src/server/
++├── db/
++│   ├── profile.ts    # All profile operations together
++│   └── note.ts       # All note operations together
++└── routers/
++    ├── profile.ts    # Profile API routes
++    └── note.ts       # Note API routes
++```
++
++**Why this approach:**
++- **Scales better** - Easy to find all code related to a feature
++- **Clear boundaries** - Each domain is self-contained
++- **Team-friendly** - Multiple developers work independently
++- **Avoids "utils hell"** - Functions live near their domain
++
++**Learn more:**
++- [Domain-Driven Design in React](https://khalilstemmler.com/articles/domain-driven-design-intro/) (Khalil Stemmler)
++- [Bulletproof React](https://github.com/alan2207/bulletproof-react) - Domain-based architecture
++- [Feature-Sliced Design](https://feature-sliced.design/) - Alternative modern approach
++
++---
++
++## 📁 Project Structure
++
++```
++src/
++├── app/                      # Next.js App Router
++│   ├── (authenticated)/      # Protected routes
++│   │   ├── dashboard/        # User dashboard
++│   │   ├── notes/            # Notes CRUD example
++│   │   └── profile/          # Profile settings
++│   ├── api/
++│   │   ├── auth/             # Auth API routes
++│   │   └── trpc/             # tRPC HTTP handler
++│   └── signin/               # Authentication pages
++│
++├── components/
++│   ├── notes/                # Notes feature
++│   ├── profile/              # Profile components
++│   ├── shared/               # Shared components
++│   └── ui/                   # shadcn/ui components
++│
++├── lib/
++│   ├── supabase/             # Supabase clients (server + browser)
++│   ├── trpc/                 # tRPC client setup
++│   └── schemas.ts            # Zod validation schemas
++│
++└── server/
++    ├── db/                   # Database operations (domain-organized)
++    ├── routers/              # tRPC routers (domain-organized)
++    └── trpc/                 # tRPC server setup
++```
++
++---
++
++## 🔧 Configuration
++
++### Environment Variables
++
++Get your Supabase credentials from [supabase.com/dashboard](https://supabase.com/dashboard):
++
++1. Create a new project
++2. Go to Project Settings → API
++3. Copy your URL and anon key
++
++**Create `.env.local`:**
++```env
++# Required
++NEXT_PUBLIC_SUPABASE_URL=your_project_url
++NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
++
++# Optional (Google OAuth)
++GOOGLE_CLIENT_ID=your_client_id
++GOOGLE_CLIENT_SECRET=your_client_secret
++
++# Site URL
++NEXT_PUBLIC_SITE_URL=http://localhost:3000
++```
++
++---
++
++### Supabase Configuration
++
++**`supabase/config.toml`** - Local development configuration
++
++This file configures your local Supabase instance (runs with `npx supabase start`):
++
++```toml
++[db]
++port = 54322              # Local database port
++major_version = 15        # PostgreSQL version
++
++[db.seed]
++enabled = true
++sql_paths = ["./seed.sql"]  # Auto-runs on db reset
++
++[auth]
++site_url = "http://127.0.0.1:3000"
++enable_signup = true
++
++[auth.external.google]
++enabled = true
++client_id = "env(GOOGLE_CLIENT_ID)"  # Reads from .env
++secret = "env(GOOGLE_CLIENT_SECRET)"
++```
++
++**What it controls:**
++- **Database settings** - Port, version, pooling
++- **Authentication** - OAuth providers, email settings, rate limits
++- **Local services** - API, Studio, Inbucket (email testing)
++- **Seed data** - Automatically runs `seed.sql` on `db reset`
++
++**Key features:**
++- Environment variable substitution with `env(VAR_NAME)`
++- Mirrors production settings locally
++- Version controlled configuration
++- Email testing with Inbucket (see emails at `localhost:54324`)
++
++**Documentation:**
++- [Supabase Config Reference](https://supabase.com/docs/guides/cli/config) - Complete guide
++- [Local Development](https://supabase.com/docs/guides/cli/local-development) - Using local Supabase
++- [Managing Environments](https://supabase.com/docs/guides/cli/managing-environments) - Local vs production
++
++---
++
++### TypeScript & ESLint
++
++**Strict mode enabled** (`tsconfig.json`):
++- No implicit `any`
++- Strict null checks
++- No unused locals/parameters
++
++**ESLint bans `any` types** (`.eslintrc.json`):
++```json
++{
++  "@typescript-eslint/no-explicit-any": "error"
++}
++```
++
++**Use `unknown` instead:**
++```typescript
++// ❌ Bad
++const data: any = await fetch('/api');
++
++// ✅ Good
++const data: unknown = await fetch('/api');
++if (isValidData(data)) {
++  // TypeScript knows the type here
++}
++```
++
++**See** [HOW_TO_REPLICATE.md - Step 14](./HOW_TO_REPLICATE.md#step-14-typescript-best-practices) for complete type safety guide.
++
++---
++
++### Database Seeding
++
++The `supabase/seed.sql` file automatically runs when you reset your local database:
++
++```bash
++npx supabase db reset  # Applies migrations + runs seed.sql
++```
++
++**Example seed file:**
++```sql
++DO $$
++DECLARE
++  v_user_id UUID;
++BEGIN
++  SELECT id INTO v_user_id FROM auth.users LIMIT 1;
++  
++  IF v_user_id IS NOT NULL THEN
++    INSERT INTO notes (user_id, title, content) VALUES
++      (v_user_id, 'Welcome!', 'Your first note');
++  END IF;
++END $$;
++```
++
++**Documentation:**
++- [Supabase Seeding](https://supabase.com/docs/guides/cli/local-development#seed-your-database) - Seed file guide
++- [PostgreSQL DO Blocks](https://www.postgresql.org/docs/current/sql-do.html) - Anonymous code blocks
++
++---
++
++## 🛠️ Development
++
++### Commands
++
++```bash
++pnpm dev              # Start development server
++pnpm build            # Production build
++pnpm lint             # Run ESLint (will error on any types)
++pnpm db:push          # Push migrations to remote
++pnpm db:reset         # Reset local database + seed
++pnpm db:types         # Generate TypeScript types from database
++```
++
++---
++
++### Adding New Features
++
++**Example: Adding a "Tasks" domain**
++
++**1. Create Migration** (`supabase/migrations/003_tasks.sql`)
++```sql
++CREATE TABLE tasks (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID REFERENCES auth.users(id),
++  title TEXT NOT NULL
++);
++
++ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
++CREATE POLICY "Users see own tasks" ON tasks
++  FOR ALL USING (auth.uid() = user_id);
++```
++
++**2. Apply & Generate Types**
++```bash
++npx supabase db push
++pnpm db:types  # Regenerate types with new 'tasks' table
++```
++
++**3. Database Operations** (`src/server/db/task.ts`)
++```typescript
++export class TaskOperations {
++  async list() {
++    const { data } = await this.supabase
++      .from('tasks')
++      .select('*');
++    return data || [];
++  }
++}
++```
++
++**4. tRPC Router** (`src/server/routers/task.ts`)
++```typescript
++export const taskRouter = router({
++  list: protectedProcedure.query(async ({ ctx }) => {
++    const db = new Database(ctx.supabase, ctx.user);
++    return db.taskList();
++  }),
++});
++```
++
++**5. Add to Main Router** (`src/server/routers/index.ts`)
++```typescript
++export const appRouter = router({
++  task: taskRouter,  // Add this line
++});
++```
++
++**6. Use in Frontend** (fully typed!)
++```typescript
++const { data: tasks } = api.task.list.useQuery();
++//     ^? Task[] - TypeScript knows the shape from database.types.ts
++```
++
++---
++
++## 🚢 Deployment
++
++### Vercel (Recommended)
++
++1. Push your code to GitHub
++2. Import project in [Vercel](https://vercel.com)
++3. Add environment variables (see [Configuration](#🔧-configuration))
++4. Deploy!
++
++Vercel automatically:
++- Builds your Next.js app
++- Sets up preview deployments
++- Configures edge functions
++
++### Database Setup
++
++Your Supabase project is production-ready:
++1. Run `npx supabase db push` to apply migrations
++2. Configure OAuth redirect URLs in Supabase dashboard
++3. Set up custom email templates (optional)
++
++**Environment variables in Vercel:**
++- `NEXT_PUBLIC_SUPABASE_URL`
++- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
++- `GOOGLE_CLIENT_ID` (optional)
++- `GOOGLE_CLIENT_SECRET` (optional)
++- `NEXT_PUBLIC_SITE_URL` (your production URL)
++
++---
++
++## 🎯 Why These Choices?
++
++### tRPC over REST/GraphQL
++
++- **End-to-end type safety** without code generation
++- **Simpler** than GraphQL for CRUD operations
++- **Better DX** - Autocomplete and inline errors
++- [Learn more](https://trpc.io/docs/main/introduction)
++
++### Supabase over Other Backends
++
++- **PostgreSQL** - Battle-tested SQL database
++- **Built-in Auth** - No separate service needed
++- **Row Level Security** - Database-level authorization
++- **Real-time** - WebSocket subscriptions included
++- [Learn more](https://supabase.com/docs)
++
++### pnpm over npm/yarn
++
++- **2x faster** than npm/yarn
++- **Disk efficient** - Content-addressable storage
++- **Strict** - Prevents phantom dependencies
++- [Benchmarks](https://pnpm.io/benchmarks)
++
++### Domain-Driven Structure
++
++- **Scales better** than feature folders
++- **Clear boundaries** - Self-contained domains
++- **Team-friendly** - Independent development
++- [Read more](https://khalilstemmler.com/articles/domain-driven-design-intro/)
++
++### Tailwind CSS v4
++
++- **Faster** - New engine performance
++- **Better DX** - `@theme` directive
++- **Modern** - CSS-first approach
++- [Migration guide](https://tailwindcss.com/docs/upgrade-guide)
++
++### shadcn/ui Copy/Paste
++
++- **Full control** - Copy/paste, not npm install
++- **Customizable** - Own the code
++- **Modern** - Built on Radix UI primitives
++- [Philosophy](https://ui.shadcn.com/docs)
++
++---
++
++## 📖 Learn More
++
++### Complete Guide
++
++**[HOW_TO_REPLICATE.md](./HOW_TO_REPLICATE.md)** - Build this from scratch
++- 16 detailed steps from `create-next-app` to production
++- Exact commands for each step
++- Inline links to official documentation for every technology
++- TypeScript best practices (avoiding `any`)
++- Database seeding guide
++- Troubleshooting tips
++
++### Official Documentation
++
++- [Next.js](https://nextjs.org/docs) - React framework
++- [Supabase](https://supabase.com/docs) - Backend platform
++- [tRPC](https://trpc.io/docs) - Type-safe API
++- [Tailwind CSS](https://tailwindcss.com/docs) - Styling
++- [shadcn/ui](https://ui.shadcn.com/) - Components
++- [TypeScript](https://www.typescriptlang.org/docs/) - Type system
++
++---
++
++## 📝 License
++
++MIT - Use this however you want!
++
++---
++
++**Built with** ❤️ **using Next.js, Supabase, tRPC, and Tailwind CSS**
+diff --git a/components.json b/components.json
+new file mode 100644
+index 0000000..270a251
+--- /dev/null
++++ b/components.json
+@@ -0,0 +1,22 @@
++{
++  "$schema": "https://ui.shadcn.com/schema.json",
++  "style": "new-york",
++  "rsc": true,
++  "tsx": true,
++  "tailwind": {
++    "config": "",
++    "css": "src/app/globals.css",
++    "baseColor": "neutral",
++    "cssVariables": true,
++    "prefix": ""
++  },
++  "aliases": {
++    "components": "@/components",
++    "utils": "@/lib/utils",
++    "ui": "@/components/ui",
++    "lib": "@/lib",
++    "hooks": "@/hooks"
++  },
++  "iconLibrary": "lucide"
++}
++
+diff --git a/next.config.ts b/next.config.ts
+new file mode 100644
+index 0000000..7443abb
+--- /dev/null
++++ b/next.config.ts
+@@ -0,0 +1,8 @@
++import type { NextConfig } from "next";
++
++const nextConfig: NextConfig = {
++  /* config options here */
++};
++
++export default nextConfig;
++
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..55f8cbb
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,52 @@
++{
++  "name": "nextjs-starter",
++  "version": "1.0.0",
++  "private": true,
++  "scripts": {
++    "dev": "next dev",
++    "build": "next build",
++    "start": "next start",
++    "lint": "next lint",
++    "db:push": "npx supabase db push",
++    "db:reset": "npx supabase db reset",
++    "db:types": "npx supabase gen types typescript --local > src/lib/database.types.ts"
++  },
++  "dependencies": {
++    "@radix-ui/react-dialog": "^1.1.14",
++    "@radix-ui/react-dropdown-menu": "^2.1.15",
++    "@radix-ui/react-label": "^2.1.7",
++    "@radix-ui/react-select": "^2.2.5",
++    "@radix-ui/react-slot": "^1.2.3",
++    "@radix-ui/react-toast": "^1.2.14",
++    "@supabase/ssr": "0.6.1",
++    "@supabase/supabase-js": "2.50.0",
++    "@tanstack/react-query": "5.80.7",
++    "@trpc/client": "11.4.0",
++    "@trpc/next": "11.4.0",
++    "@trpc/react-query": "11.4.0",
++    "@trpc/server": "11.4.0",
++    "class-variance-authority": "0.7.1",
++    "clsx": "2.1.1",
++    "lucide-react": "0.514.0",
++    "next": "15.3.3",
++    "next-themes": "^0.4.6",
++    "react": "19.1.0",
++    "react-dom": "19.1.0",
++    "sonner": "^2.0.7",
++    "superjson": "2.2.2",
++    "tailwind-merge": "3.3.1",
++    "zod": "3.25.63"
++  },
++  "devDependencies": {
++    "@tailwindcss/postcss": "4.1.10",
++    "@types/node": "20.19.0",
++    "@types/react": "19.1.8",
++    "@types/react-dom": "19.1.6",
++    "eslint": "^9.29.0",
++    "eslint-config-next": "15.3.3",
++    "supabase": "2.24.3",
++    "tailwindcss": "4.1.10",
++    "typescript": "5.8.3"
++  }
++}
++
+diff --git a/postcss.config.mjs b/postcss.config.mjs
+new file mode 100644
+index 0000000..c4a0433
+--- /dev/null
++++ b/postcss.config.mjs
+@@ -0,0 +1,6 @@
++export default {
++  plugins: {
++    '@tailwindcss/postcss': {},
++  },
++};
++
+diff --git a/src/app/(authenticated)/dashboard/page.tsx b/src/app/(authenticated)/dashboard/page.tsx
+new file mode 100644
+index 0000000..0e259f6
+--- /dev/null
++++ b/src/app/(authenticated)/dashboard/page.tsx
+@@ -0,0 +1,68 @@
++import { createClient } from '@/lib/supabase/server';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import Link from 'next/link';
++import { Button } from '@/components/ui/button';
++import { FileText, User } from 'lucide-react';
++
++export default async function DashboardPage() {
++  const supabase = await createClient();
++  const { data: { user } } = await supabase.auth.getUser();
++
++  if (!user) return null;
++
++  const { data: profile } = await supabase
++    .from('profiles')
++    .select('*')
++    .eq('id', user.id)
++    .single();
++
++  return (
++    <div className="space-y-8">
++      <div>
++        <h1 className="text-3xl font-bold tracking-tight">
++          Welcome back, {profile?.name || 'User'}!
++        </h1>
++        <p className="text-muted-foreground">
++          Here&apos;s what&apos;s happening with your account
++        </p>
++      </div>
++
++      <div className="grid gap-4 md:grid-cols-2">
++        <Card>
++          <CardHeader>
++            <CardTitle className="flex items-center gap-2">
++              <FileText className="h-5 w-5" />
++              Notes
++            </CardTitle>
++            <CardDescription>
++              Create and manage your notes
++            </CardDescription>
++          </CardHeader>
++          <CardContent>
++            <Button asChild className="w-full">
++              <Link href="/notes">View Notes</Link>
++            </Button>
++          </CardContent>
++        </Card>
++
++        <Card>
++          <CardHeader>
++            <CardTitle className="flex items-center gap-2">
++              <User className="h-5 w-5" />
++              Profile
++            </CardTitle>
++            <CardDescription>
++              Manage your profile settings
++            </CardDescription>
++          </CardHeader>
++          <CardContent>
++            <Button asChild className="w-full" variant="outline">
++              <Link href="/profile">Edit Profile</Link>
++            </Button>
++          </CardContent>
++        </Card>
++      </div>
++    </div>
++  );
++}
++
+diff --git a/src/app/(authenticated)/layout.tsx b/src/app/(authenticated)/layout.tsx
+new file mode 100644
+index 0000000..dc7763d
+--- /dev/null
++++ b/src/app/(authenticated)/layout.tsx
+@@ -0,0 +1,28 @@
++import { createClient } from '@/lib/supabase/server';
++import { redirect } from 'next/navigation';
++import Navbar from '@/components/shared/Navbar';
++
++export default async function AuthenticatedLayout({
++  children,
++}: {
++  children: React.ReactNode;
++}) {
++  const supabase = await createClient();
++  const { data: { user } } = await supabase.auth.getUser();
++
++  if (!user) {
++    redirect('/signin');
++  }
++
++  return (
++    <div className="min-h-screen flex flex-col">
++      <Navbar user={user} />
++      <main className="flex-1 p-4 md:p-8">
++        <div className="container mx-auto max-w-6xl">
++          {children}
++        </div>
++      </main>
++    </div>
++  );
++}
++
+diff --git a/src/app/(authenticated)/notes/page.tsx b/src/app/(authenticated)/notes/page.tsx
+new file mode 100644
+index 0000000..2eaf71c
+--- /dev/null
++++ b/src/app/(authenticated)/notes/page.tsx
+@@ -0,0 +1,14 @@
++'use client';
++
++import { NotesManager } from '@/components/notes/NotesManager';
++import { Toaster } from 'sonner';
++
++export default function NotesPage() {
++  return (
++    <>
++      <Toaster />
++      <NotesManager />
++    </>
++  );
++}
++
+diff --git a/src/app/(authenticated)/profile/page.tsx b/src/app/(authenticated)/profile/page.tsx
+new file mode 100644
+index 0000000..cf5904c
+--- /dev/null
++++ b/src/app/(authenticated)/profile/page.tsx
+@@ -0,0 +1,123 @@
++'use client';
++
++import { useEffect, useState } from 'react';
++import { api } from '@/lib/trpc/client';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Label } from '@/components/ui/label';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
++import { Loader2 } from 'lucide-react';
++import { toast, Toaster } from 'sonner';
++
++const COMMON_TIMEZONES = [
++  'America/New_York',
++  'America/Chicago',
++  'America/Denver',
++  'America/Los_Angeles',
++  'Europe/London',
++  'Europe/Paris',
++  'Asia/Tokyo',
++  'Asia/Singapore',
++  'Australia/Sydney',
++  'UTC',
++];
++
++export default function ProfilePage() {
++  const { data: profile, isLoading } = api.profile.get.useQuery();
++  const updateMutation = api.profile.update.useMutation({
++    onSuccess: () => {
++      toast.success('Profile updated!');
++    },
++    onError: (error) => {
++      toast.error(error.message);
++    },
++  });
++
++  const [name, setName] = useState('');
++  const [timezone, setTimezone] = useState('');
++
++  useEffect(() => {
++    if (profile) {
++      setName(profile.name || '');
++      setTimezone(profile.timezone || 'UTC');
++    }
++  }, [profile]);
++
++  const handleSubmit = (e: React.FormEvent) => {
++    e.preventDefault();
++    updateMutation.mutate({ name, timezone });
++  };
++
++  if (isLoading) {
++    return (
++      <div className="flex items-center justify-center p-8">
++        <Loader2 className="h-8 w-8 animate-spin" />
++      </div>
++    );
++  }
++
++  return (
++    <>
++      <Toaster />
++      <div className="max-w-2xl">
++        <Card>
++          <CardHeader>
++            <CardTitle>Profile Settings</CardTitle>
++            <CardDescription>Manage your account settings</CardDescription>
++          </CardHeader>
++          <CardContent>
++            <form onSubmit={handleSubmit} className="space-y-4">
++              <div className="space-y-2">
++                <Label htmlFor="email">Email</Label>
++                <Input
++                  id="email"
++                  value={profile?.email || ''}
++                  disabled
++                  className="bg-muted"
++                />
++                <p className="text-xs text-muted-foreground">
++                  Email cannot be changed
++                </p>
++              </div>
++
++              <div className="space-y-2">
++                <Label htmlFor="name">Name</Label>
++                <Input
++                  id="name"
++                  value={name}
++                  onChange={(e) => setName(e.target.value)}
++                  required
++                />
++              </div>
++
++              <div className="space-y-2">
++                <Label htmlFor="timezone">Timezone</Label>
++                <Select value={timezone} onValueChange={setTimezone}>
++                  <SelectTrigger>
++                    <SelectValue />
++                  </SelectTrigger>
++                  <SelectContent>
++                    {COMMON_TIMEZONES.map((tz) => (
++                      <SelectItem key={tz} value={tz}>
++                        {tz.replace(/_/g, ' ')}
++                      </SelectItem>
++                    ))}
++                  </SelectContent>
++                </Select>
++              </div>
++
++              <Button type="submit" disabled={updateMutation.isPending}>
++                {updateMutation.isPending && (
++                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                )}
++                Save Changes
++              </Button>
++            </form>
++          </CardContent>
++        </Card>
++      </div>
++    </>
++  );
++}
++
+diff --git a/src/app/api/auth/signout/route.ts b/src/app/api/auth/signout/route.ts
+new file mode 100644
+index 0000000..1b206f3
+--- /dev/null
++++ b/src/app/api/auth/signout/route.ts
+@@ -0,0 +1,9 @@
++import { createClient } from '@/lib/supabase/server';
++import { NextResponse } from 'next/server';
++
++export async function POST() {
++  const supabase = await createClient();
++  await supabase.auth.signOut();
++  return NextResponse.json({ success: true });
++}
++
+diff --git a/src/app/api/trpc/[trpc]/route.ts b/src/app/api/trpc/[trpc]/route.ts
+new file mode 100644
+index 0000000..97de393
+--- /dev/null
++++ b/src/app/api/trpc/[trpc]/route.ts
+@@ -0,0 +1,14 @@
++import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
++import { appRouter } from '@/server/routers';
++import { createContext } from '@/server/trpc';
++
++const handler = (req: Request) =>
++  fetchRequestHandler({
++    endpoint: '/api/trpc',
++    req,
++    router: appRouter,
++    createContext,
++  });
++
++export { handler as GET, handler as POST };
++
+diff --git a/src/app/auth/callback/route.ts b/src/app/auth/callback/route.ts
+new file mode 100644
+index 0000000..c80267d
+--- /dev/null
++++ b/src/app/auth/callback/route.ts
+@@ -0,0 +1,34 @@
++import { createServerClient } from '@supabase/ssr';
++import { cookies } from 'next/headers';
++import { NextResponse } from 'next/server';
++
++export async function GET(request: Request) {
++  const requestUrl = new URL(request.url);
++  const code = requestUrl.searchParams.get('code');
++
++  if (code) {
++    const cookieStore = await cookies();
++    const supabase = createServerClient(
++      process.env.NEXT_PUBLIC_SUPABASE_URL!,
++      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++      {
++        cookies: {
++          getAll() {
++            return cookieStore.getAll();
++          },
++          setAll(cookiesToSet) {
++            cookiesToSet.forEach(({ name, value, options }) => {
++              cookieStore.set(name, value, options);
++            });
++          },
++        },
++      }
++    );
++
++    await supabase.auth.exchangeCodeForSession(code);
++  }
++
++  // URL to redirect to after sign in process completes
++  return NextResponse.redirect(new URL('/dashboard', request.url));
++}
++
+diff --git a/src/app/forgot-password/page.tsx b/src/app/forgot-password/page.tsx
+new file mode 100644
+index 0000000..906163a
+--- /dev/null
++++ b/src/app/forgot-password/page.tsx
+@@ -0,0 +1,100 @@
++'use client';
++
++import { useState } from 'react';
++import Link from 'next/link';
++import { createClient } from '@/lib/supabase/client';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Label } from '@/components/ui/label';
++import { Loader2, ArrowLeft } from 'lucide-react';
++import { toast, Toaster } from 'sonner';
++
++export default function ForgotPasswordPage() {
++  const [email, setEmail] = useState('');
++  const [loading, setLoading] = useState(false);
++  const [sent, setSent] = useState(false);
++  const supabase = createClient();
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++    setLoading(true);
++
++    try {
++      const { error } = await supabase.auth.resetPasswordForEmail(email, {
++        redirectTo: `${window.location.origin}/reset-password`,
++      });
++
++      if (error) throw error;
++
++      setSent(true);
++      toast.success('Check your email for the password reset link!');
++    } catch (error) {
++      toast.error(error instanceof Error ? error.message : 'An error occurred');
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
++      <Toaster />
++      <Card className="w-full max-w-md">
++        <CardHeader>
++          <CardTitle>Forgot Password?</CardTitle>
++          <CardDescription>
++            {sent
++              ? 'Check your email for a reset link'
++              : 'Enter your email to receive a password reset link'}
++          </CardDescription>
++        </CardHeader>
++        <CardContent className="space-y-4">
++          {!sent ? (
++            <form onSubmit={handleSubmit} className="space-y-4">
++              <div className="space-y-2">
++                <Label htmlFor="email">Email</Label>
++                <Input
++                  id="email"
++                  type="email"
++                  placeholder="you@example.com"
++                  value={email}
++                  onChange={(e) => setEmail(e.target.value)}
++                  required
++                  disabled={loading}
++                />
++              </div>
++
++              <Button type="submit" className="w-full" disabled={loading}>
++                {loading ? (
++                  <>
++                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                    Sending...
++                  </>
++                ) : (
++                  'Send Reset Link'
++                )}
++              </Button>
++            </form>
++          ) : (
++            <div className="text-center space-y-4">
++              <p className="text-sm text-muted-foreground">
++                We&apos;ve sent a password reset link to <strong>{email}</strong>
++              </p>
++              <Button onClick={() => setSent(false)} variant="outline" className="w-full">
++                Send Another Link
++              </Button>
++            </div>
++          )}
++
++          <div className="text-center text-sm pt-4">
++            <Link href="/signin" className="text-primary hover:underline inline-flex items-center gap-2">
++              <ArrowLeft className="h-4 w-4" />
++              Back to Sign In
++            </Link>
++          </div>
++        </CardContent>
++      </Card>
++    </div>
++  );
++}
++
+diff --git a/src/app/globals.css b/src/app/globals.css
+new file mode 100644
+index 0000000..4c4a480
+--- /dev/null
++++ b/src/app/globals.css
+@@ -0,0 +1,83 @@
++@import "tailwindcss";
++
++@custom-variant dark (&:is(.dark *));
++
++@theme inline {
++  --color-background: var(--background);
++  --color-foreground: var(--foreground);
++  --color-card: var(--card);
++  --color-card-foreground: var(--card-foreground);
++  --color-popover: var(--popover);
++  --color-popover-foreground: var(--popover-foreground);
++  --color-primary: var(--primary);
++  --color-primary-foreground: var(--primary-foreground);
++  --color-secondary: var(--secondary);
++  --color-secondary-foreground: var(--secondary-foreground);
++  --color-muted: var(--muted);
++  --color-muted-foreground: var(--muted-foreground);
++  --color-accent: var(--accent);
++  --color-accent-foreground: var(--accent-foreground);
++  --color-destructive: var(--destructive);
++  --color-destructive-foreground: var(--destructive-foreground);
++  --color-border: var(--border);
++  --color-input: var(--input);
++  --color-ring: var(--ring);
++  --radius-lg: var(--radius);
++  --radius-md: calc(var(--radius) - 2px);
++  --radius-sm: calc(var(--radius) - 4px);
++}
++
++:root {
++  --background: 0 0% 100%;
++  --foreground: 0 0% 3.9%;
++  --card: 0 0% 100%;
++  --card-foreground: 0 0% 3.9%;
++  --popover: 0 0% 100%;
++  --popover-foreground: 0 0% 3.9%;
++  --primary: 0 0% 9%;
++  --primary-foreground: 0 0% 98%;
++  --secondary: 0 0% 96.1%;
++  --secondary-foreground: 0 0% 9%;
++  --muted: 0 0% 96.1%;
++  --muted-foreground: 0 0% 45.1%;
++  --accent: 0 0% 96.1%;
++  --accent-foreground: 0 0% 9%;
++  --destructive: 0 84.2% 60.2%;
++  --destructive-foreground: 0 0% 98%;
++  --border: 0 0% 89.8%;
++  --input: 0 0% 89.8%;
++  --ring: 0 0% 3.9%;
++  --radius: 0.5rem;
++}
++
++.dark {
++  --background: 0 0% 3.9%;
++  --foreground: 0 0% 98%;
++  --card: 0 0% 3.9%;
++  --card-foreground: 0 0% 98%;
++  --popover: 0 0% 3.9%;
++  --popover-foreground: 0 0% 98%;
++  --primary: 0 0% 98%;
++  --primary-foreground: 0 0% 9%;
++  --secondary: 0 0% 14.9%;
++  --secondary-foreground: 0 0% 98%;
++  --muted: 0 0% 14.9%;
++  --muted-foreground: 0 0% 63.9%;
++  --accent: 0 0% 14.9%;
++  --accent-foreground: 0 0% 98%;
++  --destructive: 0 62.8% 30.6%;
++  --destructive-foreground: 0 0% 98%;
++  --border: 0 0% 14.9%;
++  --input: 0 0% 14.9%;
++  --ring: 0 0% 83.1%;
++}
++
++@layer base {
++  * {
++    @apply border-border;
++  }
++  body {
++    @apply bg-background text-foreground;
++  }
++}
++
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+new file mode 100644
+index 0000000..7e97204
+--- /dev/null
++++ b/src/app/layout.tsx
+@@ -0,0 +1,33 @@
++import type { Metadata } from 'next';
++import { ThemeProvider } from '@/lib/theme-provider';
++import { TRPCProvider } from '@/lib/trpc/client';
++import './globals.css';
++
++export const metadata: Metadata = {
++  title: 'Next.js Starter',
++  description: 'A full-stack Next.js starter with Supabase, tRPC, and shadcn/ui',
++};
++
++export default function RootLayout({
++  children,
++}: Readonly<{
++  children: React.ReactNode;
++}>) {
++  return (
++    <html lang="en" suppressHydrationWarning>
++      <body className="antialiased">
++        <ThemeProvider
++          attribute="class"
++          defaultTheme="system"
++          enableSystem
++          disableTransitionOnChange
++        >
++          <TRPCProvider>
++            {children}
++          </TRPCProvider>
++        </ThemeProvider>
++      </body>
++    </html>
++  );
++}
++
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+new file mode 100644
+index 0000000..acac6a5
+--- /dev/null
++++ b/src/app/page.tsx
+@@ -0,0 +1,42 @@
++import Link from 'next/link';
++import { createClient } from '@/lib/supabase/server';
++import { Button } from '@/components/ui/button';
++import Navbar from '@/components/shared/Navbar';
++
++export default async function HomePage() {
++  const supabase = await createClient();
++  const { data: { user } } = await supabase.auth.getUser();
++
++  return (
++    <div className="min-h-screen flex flex-col">
++      <Navbar user={user} />
++      <main className="flex-1 flex items-center justify-center p-4">
++        <div className="text-center space-y-6 max-w-2xl">
++          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
++            Welcome to Next.js Starter
++          </h1>
++          <p className="text-lg md:text-xl text-muted-foreground">
++            A production-ready boilerplate with Next.js 15, Supabase, tRPC, and shadcn/ui
++          </p>
++          <div className="flex items-center justify-center gap-4">
++            {user ? (
++              <Button asChild size="lg">
++                <Link href="/dashboard">Go to Dashboard</Link>
++              </Button>
++            ) : (
++              <>
++                <Button asChild size="lg">
++                  <Link href="/signup">Get Started</Link>
++                </Button>
++                <Button asChild size="lg" variant="outline">
++                  <Link href="/signin">Sign In</Link>
++                </Button>
++              </>
++            )}
++          </div>
++        </div>
++      </main>
++    </div>
++  );
++}
++
+diff --git a/src/app/reset-password/page.tsx b/src/app/reset-password/page.tsx
+new file mode 100644
+index 0000000..b1879a2
+--- /dev/null
++++ b/src/app/reset-password/page.tsx
+@@ -0,0 +1,114 @@
++'use client';
++
++import { useState } from 'react';
++import { useRouter } from 'next/navigation';
++import { createClient } from '@/lib/supabase/client';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Label } from '@/components/ui/label';
++import { Loader2, Eye, EyeOff } from 'lucide-react';
++import { toast, Toaster } from 'sonner';
++
++export default function ResetPasswordPage() {
++  const [password, setPassword] = useState('');
++  const [confirmPassword, setConfirmPassword] = useState('');
++  const [showPassword, setShowPassword] = useState(false);
++  const [loading, setLoading] = useState(false);
++  const router = useRouter();
++  const supabase = createClient();
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++
++    if (password !== confirmPassword) {
++      toast.error('Passwords do not match');
++      return;
++    }
++
++    setLoading(true);
++
++    try {
++      const { error } = await supabase.auth.updateUser({
++        password: password,
++      });
++
++      if (error) throw error;
++
++      toast.success('Password updated successfully!');
++      router.push('/signin');
++    } catch (error) {
++      toast.error(error instanceof Error ? error.message : 'An error occurred');
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
++      <Toaster />
++      <Card className="w-full max-w-md">
++        <CardHeader>
++          <CardTitle>Reset Password</CardTitle>
++          <CardDescription>Enter your new password</CardDescription>
++        </CardHeader>
++        <CardContent>
++          <form onSubmit={handleSubmit} className="space-y-4">
++            <div className="space-y-2">
++              <Label htmlFor="password">New Password</Label>
++              <div className="relative">
++                <Input
++                  id="password"
++                  type={showPassword ? 'text' : 'password'}
++                  placeholder="Enter new password"
++                  value={password}
++                  onChange={(e) => setPassword(e.target.value)}
++                  required
++                  disabled={loading}
++                  className="pr-10"
++                />
++                <button
++                  type="button"
++                  onClick={() => setShowPassword(!showPassword)}
++                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
++                  disabled={loading}
++                >
++                  {showPassword ? (
++                    <EyeOff className="h-4 w-4" />
++                  ) : (
++                    <Eye className="h-4 w-4" />
++                  )}
++                </button>
++              </div>
++            </div>
++
++            <div className="space-y-2">
++              <Label htmlFor="confirm-password">Confirm Password</Label>
++              <Input
++                id="confirm-password"
++                type={showPassword ? 'text' : 'password'}
++                placeholder="Confirm new password"
++                value={confirmPassword}
++                onChange={(e) => setConfirmPassword(e.target.value)}
++                required
++                disabled={loading}
++              />
++            </div>
++
++            <Button type="submit" className="w-full" disabled={loading}>
++              {loading ? (
++                <>
++                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                  Updating...
++                </>
++              ) : (
++                'Update Password'
++              )}
++            </Button>
++          </form>
++        </CardContent>
++      </Card>
++    </div>
++  );
++}
++
+diff --git a/src/app/signin/page.tsx b/src/app/signin/page.tsx
+new file mode 100644
+index 0000000..0daadcc
+--- /dev/null
++++ b/src/app/signin/page.tsx
+@@ -0,0 +1,201 @@
++'use client';
++
++import { useState } from 'react';
++import { useRouter } from 'next/navigation';
++import Link from 'next/link';
++import { createClient } from '@/lib/supabase/client';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Label } from '@/components/ui/label';
++import { Loader2, Eye, EyeOff } from 'lucide-react';
++import { toast, Toaster } from 'sonner';
++
++export default function SignInPage() {
++  const [email, setEmail] = useState('');
++  const [password, setPassword] = useState('');
++  const [showPassword, setShowPassword] = useState(false);
++  const [loading, setLoading] = useState(false);
++  const [googleLoading, setGoogleLoading] = useState(false);
++  const router = useRouter();
++  const supabase = createClient();
++
++  const handleEmailLogin = async (e: React.FormEvent) => {
++    e.preventDefault();
++    setLoading(true);
++
++    try {
++      const { error, data } = await supabase.auth.signInWithPassword({
++        email,
++        password,
++      });
++
++      if (error) throw error;
++
++      toast.success('Welcome back!');
++      router.push('/dashboard');
++    } catch (error) {
++      toast.error(error instanceof Error ? error.message : 'An error occurred during login');
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  const handleGoogleLogin = async () => {
++    setGoogleLoading(true);
++    try {
++      const { error } = await supabase.auth.signInWithOAuth({
++        provider: 'google',
++        options: {
++          redirectTo: `${window.location.origin}/auth/callback`,
++        },
++      });
++
++      if (error) throw error;
++    } catch (error) {
++      toast.error(error instanceof Error ? error.message : 'An error occurred with Google login');
++      setGoogleLoading(false);
++    }
++  };
++
++  return (
++    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
++      <Toaster />
++      <Card className="w-full max-w-md">
++        <CardHeader className="space-y-1 text-center">
++          <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
++          <CardDescription>
++            Sign in to your account to continue
++          </CardDescription>
++        </CardHeader>
++        <CardContent className="space-y-4">
++          {/* Google Sign In */}
++          <Button
++            type="button"
++            variant="outline"
++            className="w-full"
++            onClick={handleGoogleLogin}
++            disabled={loading || googleLoading}
++          >
++            {googleLoading ? (
++              <>
++                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                Connecting to Google...
++              </>
++            ) : (
++              <>
++                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
++                  <path
++                    fill="currentColor"
++                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
++                  />
++                  <path
++                    fill="currentColor"
++                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
++                  />
++                  <path
++                    fill="currentColor"
++                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
++                  />
++                  <path
++                    fill="currentColor"
++                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
++                  />
++                </svg>
++                Continue with Google
++              </>
++            )}
++          </Button>
++
++          {/* Divider */}
++          <div className="relative">
++            <div className="absolute inset-0 flex items-center">
++              <span className="w-full border-t" />
++            </div>
++            <div className="relative flex justify-center text-xs uppercase">
++              <span className="bg-card px-2 text-muted-foreground">
++                Or continue with
++              </span>
++            </div>
++          </div>
++
++          {/* Email Sign In Form */}
++          <form onSubmit={handleEmailLogin} className="space-y-4">
++            <div className="space-y-2">
++              <Label htmlFor="email">Email</Label>
++              <Input
++                id="email"
++                type="email"
++                placeholder="you@example.com"
++                value={email}
++                onChange={(e) => setEmail(e.target.value)}
++                required
++                disabled={loading || googleLoading}
++              />
++            </div>
++
++            <div className="space-y-2">
++              <div className="flex items-center justify-between">
++                <Label htmlFor="password">Password</Label>
++                <Link
++                  href="/forgot-password"
++                  className="text-sm text-primary hover:underline"
++                >
++                  Forgot password?
++                </Link>
++              </div>
++              <div className="relative">
++                <Input
++                  id="password"
++                  type={showPassword ? 'text' : 'password'}
++                  placeholder="Enter your password"
++                  value={password}
++                  onChange={(e) => setPassword(e.target.value)}
++                  required
++                  disabled={loading || googleLoading}
++                  className="pr-10"
++                />
++                <button
++                  type="button"
++                  onClick={() => setShowPassword(!showPassword)}
++                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
++                  disabled={loading || googleLoading}
++                >
++                  {showPassword ? (
++                    <EyeOff className="h-4 w-4" />
++                  ) : (
++                    <Eye className="h-4 w-4" />
++                  )}
++                </button>
++              </div>
++            </div>
++
++            <Button
++              type="submit"
++              className="w-full"
++              disabled={loading || googleLoading}
++            >
++              {loading ? (
++                <>
++                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                  Signing in...
++                </>
++              ) : (
++                'Sign in'
++              )}
++            </Button>
++          </form>
++
++          {/* Sign Up Link */}
++          <div className="text-center text-sm pt-2">
++            <span className="text-muted-foreground">Don&apos;t have an account? </span>
++            <Link href="/signup" className="text-primary hover:underline font-semibold">
++              Sign up
++            </Link>
++          </div>
++        </CardContent>
++      </Card>
++    </div>
++  );
++}
++
+diff --git a/src/app/signup/page.tsx b/src/app/signup/page.tsx
+new file mode 100644
+index 0000000..33d3a65
+--- /dev/null
++++ b/src/app/signup/page.tsx
+@@ -0,0 +1,126 @@
++'use client';
++
++import { useState } from 'react';
++import { useRouter } from 'next/navigation';
++import Link from 'next/link';
++import { createClient } from '@/lib/supabase/client';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Label } from '@/components/ui/label';
++import { Loader2, Eye, EyeOff } from 'lucide-react';
++import { toast, Toaster } from 'sonner';
++
++export default function SignUpPage() {
++  const [email, setEmail] = useState('');
++  const [password, setPassword] = useState('');
++  const [showPassword, setShowPassword] = useState(false);
++  const [loading, setLoading] = useState(false);
++  const router = useRouter();
++  const supabase = createClient();
++
++  const handleSignUp = async (e: React.FormEvent) => {
++    e.preventDefault();
++    setLoading(true);
++
++    try {
++      const { error } = await supabase.auth.signUp({
++        email,
++        password,
++        options: {
++          emailRedirectTo: `${window.location.origin}/auth/callback`,
++        },
++      });
++
++      if (error) throw error;
++
++      toast.success('Check your email to confirm your account!');
++      router.push('/signin');
++    } catch (error) {
++      toast.error(error instanceof Error ? error.message : 'An error occurred during sign up');
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
++      <Toaster />
++      <Card className="w-full max-w-md">
++        <CardHeader className="space-y-1 text-center">
++          <CardTitle className="text-2xl font-semibold">Create an account</CardTitle>
++          <CardDescription>
++            Enter your email and password to get started
++          </CardDescription>
++        </CardHeader>
++        <CardContent>
++          <form onSubmit={handleSignUp} className="space-y-4">
++            <div className="space-y-2">
++              <Label htmlFor="email">Email</Label>
++              <Input
++                id="email"
++                type="email"
++                placeholder="you@example.com"
++                value={email}
++                onChange={(e) => setEmail(e.target.value)}
++                required
++                disabled={loading}
++              />
++            </div>
++
++            <div className="space-y-2">
++              <Label htmlFor="password">Password</Label>
++              <div className="relative">
++                <Input
++                  id="password"
++                  type={showPassword ? 'text' : 'password'}
++                  placeholder="Create a password"
++                  value={password}
++                  onChange={(e) => setPassword(e.target.value)}
++                  required
++                  disabled={loading}
++                  className="pr-10"
++                />
++                <button
++                  type="button"
++                  onClick={() => setShowPassword(!showPassword)}
++                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
++                  disabled={loading}
++                >
++                  {showPassword ? (
++                    <EyeOff className="h-4 w-4" />
++                  ) : (
++                    <Eye className="h-4 w-4" />
++                  )}
++                </button>
++              </div>
++            </div>
++
++            <Button
++              type="submit"
++              className="w-full"
++              disabled={loading}
++            >
++              {loading ? (
++                <>
++                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++                  Creating account...
++                </>
++              ) : (
++                'Sign up'
++              )}
++            </Button>
++          </form>
++
++          <div className="text-center text-sm pt-4">
++            <span className="text-muted-foreground">Already have an account? </span>
++            <Link href="/signin" className="text-primary hover:underline font-semibold">
++              Sign in
++            </Link>
++          </div>
++        </CardContent>
++      </Card>
++    </div>
++  );
++}
++
+diff --git a/src/components/notes/NotesManager.tsx b/src/components/notes/NotesManager.tsx
+new file mode 100644
+index 0000000..7e8a767
+--- /dev/null
++++ b/src/components/notes/NotesManager.tsx
+@@ -0,0 +1,239 @@
++'use client';
++
++import { useState } from 'react';
++import { api } from '@/lib/trpc/client';
++import { Button } from '@/components/ui/button';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Input } from '@/components/ui/input';
++import { Label } from '@/components/ui/label';
++import {
++  Dialog,
++  DialogContent,
++  DialogDescription,
++  DialogFooter,
++  DialogHeader,
++  DialogTitle,
++} from '@/components/ui/dialog';
++import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
++import { toast } from 'sonner';
++
++export function NotesManager() {
++  const [isCreateOpen, setIsCreateOpen] = useState(false);
++  const [editingNote, setEditingNote] = useState<{ id: string; title: string; content: string } | null>(null);
++  const [newTitle, setNewTitle] = useState('');
++  const [newContent, setNewContent] = useState('');
++
++  const utils = api.useUtils();
++  const { data: notes, isLoading } = api.note.list.useQuery();
++
++  const createMutation = api.note.create.useMutation({
++    onSuccess: () => {
++      utils.note.list.invalidate();
++      setIsCreateOpen(false);
++      setNewTitle('');
++      setNewContent('');
++      toast.success('Note created!');
++    },
++    onError: (error) => {
++      toast.error(error.message);
++    },
++  });
++
++  const updateMutation = api.note.update.useMutation({
++    onSuccess: () => {
++      utils.note.list.invalidate();
++      setEditingNote(null);
++      toast.success('Note updated!');
++    },
++    onError: (error) => {
++      toast.error(error.message);
++    },
++  });
++
++  const deleteMutation = api.note.delete.useMutation({
++    onSuccess: () => {
++      utils.note.list.invalidate();
++      toast.success('Note deleted!');
++    },
++    onError: (error) => {
++      toast.error(error.message);
++    },
++  });
++
++  const handleCreate = () => {
++    createMutation.mutate({ title: newTitle, content: newContent });
++  };
++
++  const handleUpdate = () => {
++    if (!editingNote) return;
++    updateMutation.mutate({
++      id: editingNote.id,
++      title: editingNote.title,
++      content: editingNote.content,
++    });
++  };
++
++  const handleDelete = (id: string) => {
++    if (confirm('Are you sure you want to delete this note?')) {
++      deleteMutation.mutate({ id });
++    }
++  };
++
++  if (isLoading) {
++    return (
++      <div className="flex items-center justify-center p-8">
++        <Loader2 className="h-8 w-8 animate-spin" />
++      </div>
++    );
++  }
++
++  return (
++    <div className="space-y-4">
++      <div className="flex items-center justify-between">
++        <div>
++          <h2 className="text-2xl font-bold">Notes</h2>
++          <p className="text-muted-foreground">Create and manage your notes</p>
++        </div>
++        <Button onClick={() => setIsCreateOpen(true)}>
++          <Plus className="mr-2 h-4 w-4" />
++          New Note
++        </Button>
++      </div>
++
++      {notes && notes.length === 0 ? (
++        <Card>
++          <CardContent className="flex flex-col items-center justify-center p-8">
++            <p className="text-muted-foreground mb-4">No notes yet</p>
++            <Button onClick={() => setIsCreateOpen(true)}>
++              <Plus className="mr-2 h-4 w-4" />
++              Create your first note
++            </Button>
++          </CardContent>
++        </Card>
++      ) : (
++        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
++          {notes?.map((note) => (
++            <Card key={note.id}>
++              <CardHeader>
++                <CardTitle className="line-clamp-1">{note.title}</CardTitle>
++                <CardDescription className="line-clamp-2">
++                  {note.content || 'No content'}
++                </CardDescription>
++              </CardHeader>
++              <CardContent className="flex gap-2">
++                <Button
++                  size="sm"
++                  variant="outline"
++                  onClick={() => setEditingNote(note)}
++                >
++                  <Pencil className="h-4 w-4" />
++                </Button>
++                <Button
++                  size="sm"
++                  variant="outline"
++                  onClick={() => handleDelete(note.id)}
++                  disabled={deleteMutation.isPending}
++                >
++                  <Trash2 className="h-4 w-4" />
++                </Button>
++              </CardContent>
++            </Card>
++          ))}
++        </div>
++      )}
++
++      {/* Create Dialog */}
++      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
++        <DialogContent>
++          <DialogHeader>
++            <DialogTitle>Create Note</DialogTitle>
++            <DialogDescription>Add a new note to your collection</DialogDescription>
++          </DialogHeader>
++          <div className="space-y-4">
++            <div className="space-y-2">
++              <Label htmlFor="create-title">Title</Label>
++              <Input
++                id="create-title"
++                value={newTitle}
++                onChange={(e) => setNewTitle(e.target.value)}
++                placeholder="Note title"
++              />
++            </div>
++            <div className="space-y-2">
++              <Label htmlFor="create-content">Content</Label>
++              <Input
++                id="create-content"
++                value={newContent}
++                onChange={(e) => setNewContent(e.target.value)}
++                placeholder="Note content"
++              />
++            </div>
++          </div>
++          <DialogFooter>
++            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
++              Cancel
++            </Button>
++            <Button
++              onClick={handleCreate}
++              disabled={!newTitle || createMutation.isPending}
++            >
++              {createMutation.isPending && (
++                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++              )}
++              Create
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++
++      {/* Edit Dialog */}
++      <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
++        <DialogContent>
++          <DialogHeader>
++            <DialogTitle>Edit Note</DialogTitle>
++            <DialogDescription>Make changes to your note</DialogDescription>
++          </DialogHeader>
++          {editingNote && (
++            <div className="space-y-4">
++              <div className="space-y-2">
++                <Label htmlFor="edit-title">Title</Label>
++                <Input
++                  id="edit-title"
++                  value={editingNote.title}
++                  onChange={(e) =>
++                    setEditingNote({ ...editingNote, title: e.target.value })
++                  }
++                />
++              </div>
++              <div className="space-y-2">
++                <Label htmlFor="edit-content">Content</Label>
++                <Input
++                  id="edit-content"
++                  value={editingNote.content}
++                  onChange={(e) =>
++                    setEditingNote({ ...editingNote, content: e.target.value })
++                  }
++                />
++              </div>
++            </div>
++          )}
++          <DialogFooter>
++            <Button variant="outline" onClick={() => setEditingNote(null)}>
++              Cancel
++            </Button>
++            <Button
++              onClick={handleUpdate}
++              disabled={!editingNote?.title || updateMutation.isPending}
++            >
++              {updateMutation.isPending && (
++                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
++              )}
++              Save
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++    </div>
++  );
++}
++
+diff --git a/src/components/profile/ProfileDropdown.tsx b/src/components/profile/ProfileDropdown.tsx
+new file mode 100644
+index 0000000..959c0aa
+--- /dev/null
++++ b/src/components/profile/ProfileDropdown.tsx
+@@ -0,0 +1,46 @@
++'use client';
++
++import { LogOut, User } from 'lucide-react';
++import { useRouter } from 'next/navigation';
++import {
++  DropdownMenu,
++  DropdownMenuContent,
++  DropdownMenuItem,
++  DropdownMenuSeparator,
++  DropdownMenuTrigger,
++} from '@/components/ui/dropdown-menu';
++import { Button } from '@/components/ui/button';
++import { createClient } from '@/lib/supabase/client';
++
++export function ProfileDropdown({ user }: { user: { email: string } }) {
++  const router = useRouter();
++  const supabase = createClient();
++
++  const handleSignOut = async () => {
++    await supabase.auth.signOut();
++    router.push('/');
++    router.refresh();
++  };
++
++  return (
++    <DropdownMenu>
++      <DropdownMenuTrigger asChild>
++        <Button variant="ghost" size="sm" className="gap-2">
++          <User className="h-4 w-4" />
++          <span className="hidden sm:inline">{user.email}</span>
++        </Button>
++      </DropdownMenuTrigger>
++      <DropdownMenuContent align="end" className="w-56">
++        <div className="px-2 py-1.5 text-sm text-muted-foreground">
++          {user.email}
++        </div>
++        <DropdownMenuSeparator />
++        <DropdownMenuItem onClick={handleSignOut} variant="destructive">
++          <LogOut className="mr-2 h-4 w-4" />
++          Sign Out
++        </DropdownMenuItem>
++      </DropdownMenuContent>
++    </DropdownMenu>
++  );
++}
++
+diff --git a/src/components/shared/Navbar.tsx b/src/components/shared/Navbar.tsx
+new file mode 100644
+index 0000000..9fe6958
+--- /dev/null
++++ b/src/components/shared/Navbar.tsx
+@@ -0,0 +1,65 @@
++'use client';
++
++import Link from 'next/link';
++import { usePathname } from 'next/navigation';
++import { ProfileDropdown } from '../profile/ProfileDropdown';
++import { cn } from '@/lib/utils';
++
++export default function Navbar({ user }: { user?: { email: string } | null }) {
++  const pathname = usePathname();
++
++  const navItems = user
++    ? [
++        { href: '/dashboard', label: 'Dashboard' },
++        { href: '/notes', label: 'Notes' },
++        { href: '/profile', label: 'Profile' },
++      ]
++    : [];
++
++  return (
++    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
++      <div className="container mx-auto px-4">
++        <div className="flex h-14 items-center justify-between">
++          <div className="flex items-center gap-6">
++            <Link href="/" className="text-lg font-semibold">
++              App
++            </Link>
++            {navItems.map((item) => (
++              <Link
++                key={item.href}
++                href={item.href}
++                className={cn(
++                  'text-sm transition-colors hover:text-foreground/80',
++                  pathname === item.href ? 'text-foreground' : 'text-foreground/60'
++                )}
++              >
++                {item.label}
++              </Link>
++            ))}
++          </div>
++          <div className="flex items-center gap-4">
++            {user ? (
++              <ProfileDropdown user={user} />
++            ) : (
++              <div className="flex items-center gap-2">
++                <Link
++                  href="/signin"
++                  className="text-sm text-foreground/60 hover:text-foreground transition-colors"
++                >
++                  Sign In
++                </Link>
++                <Link
++                  href="/signup"
++                  className="text-sm bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors"
++                >
++                  Sign Up
++                </Link>
++              </div>
++            )}
++          </div>
++        </div>
++      </div>
++    </nav>
++  );
++}
++
+diff --git a/src/components/ui/button.tsx b/src/components/ui/button.tsx
+new file mode 100644
+index 0000000..d8f2283
+--- /dev/null
++++ b/src/components/ui/button.tsx
+@@ -0,0 +1,60 @@
++import * as React from "react"
++import { Slot } from "@radix-ui/react-slot"
++import { cva, type VariantProps } from "class-variance-authority"
++
++import { cn } from "@/lib/utils"
++
++const buttonVariants = cva(
++  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
++  {
++    variants: {
++      variant: {
++        default:
++          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
++        destructive:
++          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
++        outline:
++          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
++        secondary:
++          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
++        ghost:
++          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
++        link: "text-primary underline-offset-4 hover:underline",
++      },
++      size: {
++        default: "h-9 px-4 py-2 has-[>svg]:px-3",
++        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
++        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
++        icon: "size-9",
++      },
++    },
++    defaultVariants: {
++      variant: "default",
++      size: "default",
++    },
++  }
++)
++
++function Button({
++  className,
++  variant,
++  size,
++  asChild = false,
++  ...props
++}: React.ComponentProps<"button"> &
++  VariantProps<typeof buttonVariants> & {
++    asChild?: boolean
++  }) {
++  const Comp = asChild ? Slot : "button"
++
++  return (
++    <Comp
++      data-slot="button"
++      className={cn(buttonVariants({ variant, size, className }))}
++      {...props}
++    />
++  )
++}
++
++export { Button, buttonVariants }
++
+diff --git a/src/components/ui/card.tsx b/src/components/ui/card.tsx
+new file mode 100644
+index 0000000..51564f4
+--- /dev/null
++++ b/src/components/ui/card.tsx
+@@ -0,0 +1,93 @@
++import * as React from "react"
++
++import { cn } from "@/lib/utils"
++
++function Card({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card"
++      className={cn(
++        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-header"
++      className={cn(
++        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-title"
++      className={cn("leading-none font-semibold", className)}
++      {...props}
++    />
++  )
++}
++
++function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-description"
++      className={cn("text-muted-foreground text-sm", className)}
++      {...props}
++    />
++  )
++}
++
++function CardAction({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-action"
++      className={cn(
++        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function CardContent({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-content"
++      className={cn("px-6", className)}
++      {...props}
++    />
++  )
++}
++
++function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
++  return (
++    <div
++      data-slot="card-footer"
++      className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
++      {...props}
++    />
++  )
++}
++
++export {
++  Card,
++  CardHeader,
++  CardFooter,
++  CardTitle,
++  CardAction,
++  CardDescription,
++  CardContent,
++}
++
+diff --git a/src/components/ui/dialog.tsx b/src/components/ui/dialog.tsx
+new file mode 100644
+index 0000000..fb35652
+--- /dev/null
++++ b/src/components/ui/dialog.tsx
+@@ -0,0 +1,121 @@
++import * as React from "react"
++import * as DialogPrimitive from "@radix-ui/react-dialog"
++import { X } from "lucide-react"
++
++import { cn } from "@/lib/utils"
++
++const Dialog = DialogPrimitive.Root
++
++const DialogTrigger = DialogPrimitive.Trigger
++
++const DialogPortal = DialogPrimitive.Portal
++
++const DialogClose = DialogPrimitive.Close
++
++const DialogOverlay = React.forwardRef<
++  React.ElementRef<typeof DialogPrimitive.Overlay>,
++  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
++>(({ className, ...props }, ref) => (
++  <DialogPrimitive.Overlay
++    ref={ref}
++    className={cn(
++      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
++      className
++    )}
++    {...props}
++  />
++))
++DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
++
++const DialogContent = React.forwardRef<
++  React.ElementRef<typeof DialogPrimitive.Content>,
++  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
++>(({ className, children, ...props }, ref) => (
++  <DialogPortal>
++    <DialogOverlay />
++    <DialogPrimitive.Content
++      ref={ref}
++      className={cn(
++        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
++        className
++      )}
++      {...props}
++    >
++      {children}
++      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
++        <X className="h-4 w-4" />
++        <span className="sr-only">Close</span>
++      </DialogPrimitive.Close>
++    </DialogPrimitive.Content>
++  </DialogPortal>
++))
++DialogContent.displayName = DialogPrimitive.Content.displayName
++
++const DialogHeader = ({
++  className,
++  ...props
++}: React.HTMLAttributes<HTMLDivElement>) => (
++  <div
++    className={cn(
++      "flex flex-col space-y-1.5 text-center sm:text-left",
++      className
++    )}
++    {...props}
++  />
++)
++DialogHeader.displayName = "DialogHeader"
++
++const DialogFooter = ({
++  className,
++  ...props
++}: React.HTMLAttributes<HTMLDivElement>) => (
++  <div
++    className={cn(
++      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
++      className
++    )}
++    {...props}
++  />
++)
++DialogFooter.displayName = "DialogFooter"
++
++const DialogTitle = React.forwardRef<
++  React.ElementRef<typeof DialogPrimitive.Title>,
++  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
++>(({ className, ...props }, ref) => (
++  <DialogPrimitive.Title
++    ref={ref}
++    className={cn(
++      "text-lg font-semibold leading-none tracking-tight",
++      className
++    )}
++    {...props}
++  />
++))
++DialogTitle.displayName = DialogPrimitive.Title.displayName
++
++const DialogDescription = React.forwardRef<
++  React.ElementRef<typeof DialogPrimitive.Description>,
++  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
++>(({ className, ...props }, ref) => (
++  <DialogPrimitive.Description
++    ref={ref}
++    className={cn("text-sm text-muted-foreground", className)}
++    {...props}
++  />
++))
++DialogDescription.displayName = DialogPrimitive.Description.displayName
++
++export {
++  Dialog,
++  DialogPortal,
++  DialogOverlay,
++  DialogClose,
++  DialogTrigger,
++  DialogContent,
++  DialogHeader,
++  DialogFooter,
++  DialogTitle,
++  DialogDescription,
++}
++
+diff --git a/src/components/ui/dropdown-menu.tsx b/src/components/ui/dropdown-menu.tsx
+new file mode 100644
+index 0000000..f0ae70f
+--- /dev/null
++++ b/src/components/ui/dropdown-menu.tsx
+@@ -0,0 +1,89 @@
++"use client"
++
++import * as React from "react"
++import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
++import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
++
++import { cn } from "@/lib/utils"
++
++function DropdownMenu({
++  ...props
++}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
++  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
++}
++
++function DropdownMenuTrigger({
++  ...props
++}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
++  return (
++    <DropdownMenuPrimitive.Trigger
++      data-slot="dropdown-menu-trigger"
++      {...props}
++    />
++  )
++}
++
++function DropdownMenuContent({
++  className,
++  sideOffset = 4,
++  ...props
++}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
++  return (
++    <DropdownMenuPrimitive.Portal>
++      <DropdownMenuPrimitive.Content
++        data-slot="dropdown-menu-content"
++        sideOffset={sideOffset}
++        className={cn(
++          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
++          className
++        )}
++        {...props}
++      />
++    </DropdownMenuPrimitive.Portal>
++  )
++}
++
++function DropdownMenuItem({
++  className,
++  inset,
++  variant = "default",
++  ...props
++}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
++  inset?: boolean
++  variant?: "default" | "destructive"
++}) {
++  return (
++    <DropdownMenuPrimitive.Item
++      data-slot="dropdown-menu-item"
++      data-inset={inset}
++      data-variant={variant}
++      className={cn(
++        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++function DropdownMenuSeparator({
++  className,
++  ...props
++}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
++  return (
++    <DropdownMenuPrimitive.Separator
++      data-slot="dropdown-menu-separator"
++      className={cn("bg-border -mx-1 my-1 h-px", className)}
++      {...props}
++    />
++  )
++}
++
++export {
++  DropdownMenu,
++  DropdownMenuTrigger,
++  DropdownMenuContent,
++  DropdownMenuItem,
++  DropdownMenuSeparator,
++}
++
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+new file mode 100644
+index 0000000..c48da59
+--- /dev/null
++++ b/src/components/ui/input.tsx
+@@ -0,0 +1,22 @@
++import * as React from "react"
++
++import { cn } from "@/lib/utils"
++
++function Input({ className, type, ...props }: React.ComponentProps<"input">) {
++  return (
++    <input
++      type={type}
++      data-slot="input"
++      className={cn(
++        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground bg-transparent dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
++        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
++        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++export { Input }
++
+diff --git a/src/components/ui/label.tsx b/src/components/ui/label.tsx
+new file mode 100644
+index 0000000..8a52361
+--- /dev/null
++++ b/src/components/ui/label.tsx
+@@ -0,0 +1,25 @@
++"use client"
++
++import * as React from "react"
++import * as LabelPrimitive from "@radix-ui/react-label"
++
++import { cn } from "@/lib/utils"
++
++function Label({
++  className,
++  ...props
++}: React.ComponentProps<typeof LabelPrimitive.Root>) {
++  return (
++    <LabelPrimitive.Root
++      data-slot="label"
++      className={cn(
++        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
++        className
++      )}
++      {...props}
++    />
++  )
++}
++
++export { Label }
++
+diff --git a/src/components/ui/select.tsx b/src/components/ui/select.tsx
+new file mode 100644
+index 0000000..a1a262e
+--- /dev/null
++++ b/src/components/ui/select.tsx
+@@ -0,0 +1,107 @@
++"use client"
++
++import * as React from "react"
++import * as SelectPrimitive from "@radix-ui/react-select"
++import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
++
++import { cn } from "@/lib/utils"
++
++function Select({
++  ...props
++}: React.ComponentProps<typeof SelectPrimitive.Root>) {
++  return <SelectPrimitive.Root data-slot="select" {...props} />
++}
++
++function SelectValue({
++  ...props
++}: React.ComponentProps<typeof SelectPrimitive.Value>) {
++  return <SelectPrimitive.Value data-slot="select-value" {...props} />
++}
++
++function SelectTrigger({
++  className,
++  children,
++  ...props
++}: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
++  return (
++    <SelectPrimitive.Trigger
++      data-slot="select-trigger"
++      className={cn(
++        "border-input data-[placeholder]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
++        className
++      )}
++      {...props}
++    >
++      {children}
++      <SelectPrimitive.Icon asChild>
++        <ChevronDownIcon className="size-4 opacity-50" />
++      </SelectPrimitive.Icon>
++    </SelectPrimitive.Trigger>
++  )
++}
++
++function SelectContent({
++  className,
++  children,
++  position = "popper",
++  ...props
++}: React.ComponentProps<typeof SelectPrimitive.Content>) {
++  return (
++    <SelectPrimitive.Portal>
++      <SelectPrimitive.Content
++        data-slot="select-content"
++        className={cn(
++          "bg-popover text-popover-foreground relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border shadow-md",
++          position === "popper" &&
++            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
++          className
++        )}
++        position={position}
++        {...props}
++      >
++        <SelectPrimitive.Viewport
++          className={cn(
++            "p-1",
++            position === "popper" &&
++              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
++          )}
++        >
++          {children}
++        </SelectPrimitive.Viewport>
++      </SelectPrimitive.Content>
++    </SelectPrimitive.Portal>
++  )
++}
++
++function SelectItem({
++  className,
++  children,
++  ...props
++}: React.ComponentProps<typeof SelectPrimitive.Item>) {
++  return (
++    <SelectPrimitive.Item
++      data-slot="select-item"
++      className={cn(
++        "focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
++        className
++      )}
++      {...props}
++    >
++      <span className="absolute right-2 flex size-3.5 items-center justify-center">
++        <SelectPrimitive.ItemIndicator>
++          <CheckIcon className="size-4" />
++        </SelectPrimitive.ItemIndicator>
++      </span>
++      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
++    </SelectPrimitive.Item>
++  )
++}
++
++export {
++  Select,
++  SelectContent,
++  SelectItem,
++  SelectTrigger,
++  SelectValue,
++}
++
+diff --git a/src/lib/database.types.ts b/src/lib/database.types.ts
+new file mode 100644
+index 0000000..08b5ff7
+--- /dev/null
++++ b/src/lib/database.types.ts
+@@ -0,0 +1,164 @@
++export type Json =
++  | string
++  | number
++  | boolean
++  | null
++  | { [key: string]: Json | undefined }
++  | Json[]
++
++export type Database = {
++  public: {
++    Tables: {
++      notes: {
++        Row: {
++          id: string
++          user_id: string
++          title: string
++          content: string
++          created_at: string
++          updated_at: string
++        }
++        Insert: {
++          id?: string
++          user_id: string
++          title: string
++          content?: string
++          created_at?: string
++          updated_at?: string
++        }
++        Update: {
++          id?: string
++          user_id?: string
++          title?: string
++          content?: string
++          created_at?: string
++          updated_at?: string
++        }
++        Relationships: []
++      }
++      profiles: {
++        Row: {
++          id: string
++          email: string
++          name: string | null
++          timezone: string
++          created_at: string
++          updated_at: string
++        }
++        Insert: {
++          id: string
++          email: string
++          name?: string | null
++          timezone?: string
++          created_at?: string
++          updated_at?: string
++        }
++        Update: {
++          id?: string
++          email?: string
++          name?: string | null
++          timezone?: string
++          created_at?: string
++          updated_at?: string
++        }
++        Relationships: []
++      }
++    }
++    Views: {
++      [_ in never]: never
++    }
++    Functions: {
++      handle_new_user: {
++        Args: Record<PropertyKey, never>
++        Returns: undefined
++      }
++    }
++    Enums: {
++      [_ in never]: never
++    }
++    CompositeTypes: {
++      [_ in never]: never
++    }
++  }
++}
++
++export type Tables<
++  PublicTableNameOrOptions extends
++    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
++    | { schema: keyof Database },
++  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
++    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
++        Database[PublicTableNameOrOptions["schema"]]["Views"])
++    : never = never
++> = PublicTableNameOrOptions extends { schema: keyof Database }
++  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
++      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
++      Row: infer R
++    }
++    ? R
++    : never
++  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
++      Database["public"]["Views"])
++  ? (Database["public"]["Tables"] &
++      Database["public"]["Views"])[PublicTableNameOrOptions] extends {
++      Row: infer R
++    }
++    ? R
++    : never
++  : never
++
++export type TablesInsert<
++  PublicTableNameOrOptions extends
++    | keyof Database["public"]["Tables"]
++    | { schema: keyof Database },
++  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
++    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
++    : never = never
++> = PublicTableNameOrOptions extends { schema: keyof Database }
++  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
++      Insert: infer I
++    }
++    ? I
++    : never
++  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
++  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
++      Insert: infer I
++    }
++    ? I
++    : never
++  : never
++
++export type TablesUpdate<
++  PublicTableNameOrOptions extends
++    | keyof Database["public"]["Tables"]
++    | { schema: keyof Database },
++  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
++    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
++    : never = never
++> = PublicTableNameOrOptions extends { schema: keyof Database }
++  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
++      Update: infer U
++    }
++    ? U
++    : never
++  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
++  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
++      Update: infer U
++    }
++    ? U
++    : never
++  : never
++
++export type Enums<
++  PublicEnumNameOrOptions extends
++    | keyof Database["public"]["Enums"]
++    | { schema: keyof Database },
++  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
++    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
++    : never = never
++> = PublicEnumNameOrOptions extends { schema: keyof Database }
++  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
++  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
++  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
++  : never
++
+diff --git a/src/lib/schemas.ts b/src/lib/schemas.ts
+new file mode 100644
+index 0000000..43e43d3
+--- /dev/null
++++ b/src/lib/schemas.ts
+@@ -0,0 +1,30 @@
++import { z } from 'zod';
++
++// Profile schemas
++export const ProfileUpdateInput = z.object({
++  name: z.string().min(1, 'Name is required'),
++  timezone: z.string().min(1, 'Timezone is required'),
++});
++
++export type ProfileUpdateInput = z.infer<typeof ProfileUpdateInput>;
++
++// Note schemas
++export const NoteCreateInput = z.object({
++  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
++  content: z.string().optional(),
++});
++
++export const NoteUpdateInput = z.object({
++  id: z.string().uuid(),
++  title: z.string().min(1, 'Title is required').max(200, 'Title is too long').optional(),
++  content: z.string().optional(),
++});
++
++export const NoteDeleteInput = z.object({
++  id: z.string().uuid(),
++});
++
++export type NoteCreateInput = z.infer<typeof NoteCreateInput>;
++export type NoteUpdateInput = z.infer<typeof NoteUpdateInput>;
++export type NoteDeleteInput = z.infer<typeof NoteDeleteInput>;
++
+diff --git a/src/lib/supabase/client.ts b/src/lib/supabase/client.ts
+new file mode 100644
+index 0000000..2239975
+--- /dev/null
++++ b/src/lib/supabase/client.ts
+@@ -0,0 +1,9 @@
++import { createBrowserClient } from '@supabase/ssr'
++
++export function createClient() {
++  return createBrowserClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
++  )
++}
++
+diff --git a/src/lib/supabase/server.ts b/src/lib/supabase/server.ts
+new file mode 100644
+index 0000000..9040b8b
+--- /dev/null
++++ b/src/lib/supabase/server.ts
+@@ -0,0 +1,30 @@
++import { createServerClient } from '@supabase/ssr'
++import { cookies } from 'next/headers'
++
++export async function createClient() {
++  const cookieStore = await cookies()
++
++  return createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return cookieStore.getAll()
++        },
++        setAll(cookiesToSet) {
++          try {
++            cookiesToSet.forEach(({ name, value, options }) =>
++              cookieStore.set(name, value, options)
++            )
++          } catch {
++            // The `setAll` method was called from a Server Component.
++            // This can be ignored if you have middleware refreshing
++            // user sessions.
++          }
++        },
++      },
++    }
++  )
++}
++
+diff --git a/src/lib/theme-provider.tsx b/src/lib/theme-provider.tsx
+new file mode 100644
+index 0000000..bf18140
+--- /dev/null
++++ b/src/lib/theme-provider.tsx
+@@ -0,0 +1,12 @@
++'use client';
++
++import * as React from 'react';
++import { ThemeProvider as NextThemesProvider } from 'next-themes';
++
++export function ThemeProvider({
++  children,
++  ...props
++}: React.ComponentProps<typeof NextThemesProvider>) {
++  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
++}
++
+diff --git a/src/lib/trpc/client.tsx b/src/lib/trpc/client.tsx
+new file mode 100644
+index 0000000..2d0b036
+--- /dev/null
++++ b/src/lib/trpc/client.tsx
+@@ -0,0 +1,48 @@
++'use client';
++
++import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
++import { httpBatchLink } from '@trpc/client';
++import { createTRPCReact } from '@trpc/react-query';
++import { useState } from 'react';
++import superjson from 'superjson';
++
++import type { AppRouter } from '@/server/routers';
++
++export const api = createTRPCReact<AppRouter>();
++
++function getBaseUrl() {
++  if (typeof window !== 'undefined') return '';
++  return `http://localhost:${process.env.PORT ?? 3000}`;
++}
++
++export function TRPCProvider({ children }: { children: React.ReactNode }) {
++  const [queryClient] = useState(
++    () =>
++      new QueryClient({
++        defaultOptions: {
++          queries: {
++            refetchOnWindowFocus: false,
++            retry: 1,
++          },
++        },
++      })
++  );
++
++  const [trpcClient] = useState(() =>
++    api.createClient({
++      links: [
++        httpBatchLink({
++          url: `${getBaseUrl()}/api/trpc`,
++          transformer: superjson,
++        }),
++      ],
++    })
++  );
++
++  return (
++    <api.Provider client={trpcClient} queryClient={queryClient}>
++      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
++    </api.Provider>
++  );
++}
++
+diff --git a/src/lib/utils.ts b/src/lib/utils.ts
+new file mode 100644
+index 0000000..e8ed525
+--- /dev/null
++++ b/src/lib/utils.ts
+@@ -0,0 +1,7 @@
++import { clsx, type ClassValue } from "clsx"
++import { twMerge } from "tailwind-merge"
++
++export function cn(...inputs: ClassValue[]) {
++  return twMerge(clsx(inputs))
++}
++
+diff --git a/src/middleware.ts b/src/middleware.ts
+new file mode 100644
+index 0000000..492d8b6
+--- /dev/null
++++ b/src/middleware.ts
+@@ -0,0 +1,66 @@
++import { createServerClient } from '@supabase/ssr';
++import { NextResponse, type NextRequest } from 'next/server';
++
++export async function middleware(request: NextRequest) {
++  let supabaseResponse = NextResponse.next({
++    request,
++  });
++
++  const supabase = createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return request.cookies.getAll();
++        },
++        setAll(cookiesToSet) {
++          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
++          supabaseResponse = NextResponse.next({
++            request,
++          });
++          cookiesToSet.forEach(({ name, value, options }) =>
++            supabaseResponse.cookies.set(name, value, options)
++          );
++        },
++      },
++    }
++  );
++
++  // Get the user session
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  const pathname = request.nextUrl.pathname;
++  const isAuthPage = pathname.startsWith('/signin') || 
++                      pathname.startsWith('/signup') || 
++                      pathname.startsWith('/auth') ||
++                      pathname.startsWith('/forgot-password') ||
++                      pathname.startsWith('/reset-password');
++  const isHomepage = pathname === '/';
++  const isPublicPage = isHomepage || isAuthPage;
++
++  // If user is not authenticated and trying to access protected routes
++  if (!user && !isPublicPage) {
++    const url = request.nextUrl.clone();
++    url.pathname = '/signin';
++    return NextResponse.redirect(url);
++  }
++
++  // If user is authenticated and trying to access auth pages, redirect to dashboard
++  if (user && isAuthPage) {
++    const url = request.nextUrl.clone();
++    url.pathname = '/dashboard';
++    return NextResponse.redirect(url);
++  }
++
++  return supabaseResponse;
++}
++
++export const config = {
++  matcher: [
++    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
++  ],
++};
++
+diff --git a/src/server/db/index.ts b/src/server/db/index.ts
+new file mode 100644
+index 0000000..f34eb54
+--- /dev/null
++++ b/src/server/db/index.ts
+@@ -0,0 +1,50 @@
++import { SupabaseClient, User } from '@supabase/supabase-js';
++import { ProfileOperations } from './profile';
++import { NoteOperations } from './note';
++
++/**
++ * Main Database class that aggregates all domain-specific operations
++ */
++export class Database {
++  private profile: ProfileOperations;
++  private note: NoteOperations;
++
++  constructor(
++    private supabase: SupabaseClient,
++    private user: User
++  ) {
++    this.profile = new ProfileOperations(supabase, user);
++    this.note = new NoteOperations(supabase, user);
++  }
++
++  // Profile operations
++  async profileGet() {
++    return this.profile.get();
++  }
++
++  async profileUpdate(data: { name?: string; timezone?: string }) {
++    return this.profile.update(data);
++  }
++
++  // Note operations
++  async noteList() {
++    return this.note.list();
++  }
++
++  async noteGet(id: string) {
++    return this.note.get(id);
++  }
++
++  async noteCreate(data: { title: string; content?: string }) {
++    return this.note.create(data);
++  }
++
++  async noteUpdate(id: string, data: { title?: string; content?: string }) {
++    return this.note.update(id, data);
++  }
++
++  async noteDelete(id: string) {
++    return this.note.delete(id);
++  }
++}
++
+diff --git a/src/server/db/note.ts b/src/server/db/note.ts
+new file mode 100644
+index 0000000..4a08ca6
+--- /dev/null
++++ b/src/server/db/note.ts
+@@ -0,0 +1,74 @@
++import { SupabaseClient, User } from '@supabase/supabase-js';
++
++export class NoteOperations {
++  constructor(
++    private supabase: SupabaseClient,
++    private user: User
++  ) {}
++
++  async list() {
++    const { data, error } = await this.supabase
++      .from('notes')
++      .select('*')
++      .eq('user_id', this.user.id)
++      .order('created_at', { ascending: false });
++
++    if (error) throw error;
++    return data || [];
++  }
++
++  async get(id: string) {
++    const { data, error } = await this.supabase
++      .from('notes')
++      .select('*')
++      .eq('id', id)
++      .eq('user_id', this.user.id)
++      .single();
++
++    if (error) throw error;
++    return data;
++  }
++
++  async create(data: { title: string; content?: string }) {
++    const { data: note, error } = await this.supabase
++      .from('notes')
++      .insert({
++        user_id: this.user.id,
++        title: data.title,
++        content: data.content || '',
++      })
++      .select()
++      .single();
++
++    if (error) throw error;
++    return note;
++  }
++
++  async update(id: string, data: { title?: string; content?: string }) {
++    const { data: note, error } = await this.supabase
++      .from('notes')
++      .update({
++        ...data,
++        updated_at: new Date().toISOString(),
++      })
++      .eq('id', id)
++      .eq('user_id', this.user.id)
++      .select()
++      .single();
++
++    if (error) throw error;
++    return note;
++  }
++
++  async delete(id: string) {
++    const { error } = await this.supabase
++      .from('notes')
++      .delete()
++      .eq('id', id)
++      .eq('user_id', this.user.id);
++
++    if (error) throw error;
++    return { success: true };
++  }
++}
++
+diff --git a/src/server/db/profile.ts b/src/server/db/profile.ts
+new file mode 100644
+index 0000000..b1257a3
+--- /dev/null
++++ b/src/server/db/profile.ts
+@@ -0,0 +1,35 @@
++import { SupabaseClient, User } from '@supabase/supabase-js';
++
++export class ProfileOperations {
++  constructor(
++    private supabase: SupabaseClient,
++    private user: User
++  ) {}
++
++  async get() {
++    const { data, error } = await this.supabase
++      .from('profiles')
++      .select('*')
++      .eq('id', this.user.id)
++      .single();
++
++    if (error) throw error;
++    return data;
++  }
++
++  async update(data: { name?: string; timezone?: string }) {
++    const { data: profile, error } = await this.supabase
++      .from('profiles')
++      .update({
++        ...data,
++        updated_at: new Date().toISOString(),
++      })
++      .eq('id', this.user.id)
++      .select()
++      .single();
++
++    if (error) throw error;
++    return profile;
++  }
++}
++
+diff --git a/src/server/routers/index.ts b/src/server/routers/index.ts
+new file mode 100644
+index 0000000..02bc0d5
+--- /dev/null
++++ b/src/server/routers/index.ts
+@@ -0,0 +1,11 @@
++import { router } from '../trpc';
++import { profileRouter } from './profile';
++import { noteRouter } from './note';
++
++export const appRouter = router({
++  profile: profileRouter,
++  note: noteRouter,
++});
++
++export type AppRouter = typeof appRouter;
++
+diff --git a/src/server/routers/note.ts b/src/server/routers/note.ts
+new file mode 100644
+index 0000000..de90ee0
+--- /dev/null
++++ b/src/server/routers/note.ts
+@@ -0,0 +1,41 @@
++import { router, protectedProcedure } from '../trpc';
++import { Database } from '../db';
++import { NoteCreateInput, NoteUpdateInput, NoteDeleteInput } from '@/lib/schemas';
++import { z } from 'zod';
++
++export const noteRouter = router({
++  list: protectedProcedure.query(async ({ ctx }) => {
++    const db = new Database(ctx.supabase, ctx.user);
++    return db.noteList();
++  }),
++
++  get: protectedProcedure
++    .input(z.object({ id: z.string().uuid() }))
++    .query(async ({ ctx, input }) => {
++      const db = new Database(ctx.supabase, ctx.user);
++      return db.noteGet(input.id);
++    }),
++
++  create: protectedProcedure
++    .input(NoteCreateInput)
++    .mutation(async ({ ctx, input }) => {
++      const db = new Database(ctx.supabase, ctx.user);
++      return db.noteCreate(input);
++    }),
++
++  update: protectedProcedure
++    .input(NoteUpdateInput)
++    .mutation(async ({ ctx, input }) => {
++      const db = new Database(ctx.supabase, ctx.user);
++      const { id, ...data } = input;
++      return db.noteUpdate(id, data);
++    }),
++
++  delete: protectedProcedure
++    .input(NoteDeleteInput)
++    .mutation(async ({ ctx, input }) => {
++      const db = new Database(ctx.supabase, ctx.user);
++      return db.noteDelete(input.id);
++    }),
++});
++
+diff --git a/src/server/routers/profile.ts b/src/server/routers/profile.ts
+new file mode 100644
+index 0000000..aaa37f2
+--- /dev/null
++++ b/src/server/routers/profile.ts
+@@ -0,0 +1,18 @@
++import { router, protectedProcedure } from '../trpc';
++import { Database } from '../db';
++import { ProfileUpdateInput } from '@/lib/schemas';
++
++export const profileRouter = router({
++  get: protectedProcedure.query(async ({ ctx }) => {
++    const db = new Database(ctx.supabase, ctx.user);
++    return db.profileGet();
++  }),
++
++  update: protectedProcedure
++    .input(ProfileUpdateInput)
++    .mutation(async ({ ctx, input }) => {
++      const db = new Database(ctx.supabase, ctx.user);
++      return db.profileUpdate(input);
++    }),
++});
++
+diff --git a/src/server/trpc/index.ts b/src/server/trpc/index.ts
+new file mode 100644
+index 0000000..ac8a8df
+--- /dev/null
++++ b/src/server/trpc/index.ts
+@@ -0,0 +1,54 @@
++import { initTRPC, TRPCError } from '@trpc/server';
++import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
++import { createClient } from '../../lib/supabase/server';
++import { type User } from '@supabase/supabase-js';
++import superjson from 'superjson';
++import { ZodError } from 'zod';
++
++export async function createContext(opts: FetchCreateContextFnOptions) {
++  const supabase = await createClient();
++  
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  return {
++    supabase,
++    user,
++    headers: opts.req.headers,
++  };
++}
++
++export type Context = Awaited<ReturnType<typeof createContext>>;
++
++const t = initTRPC.context<Context>().create({
++  transformer: superjson,
++  errorFormatter({ shape, error }) {
++    return {
++      ...shape,
++      data: {
++        ...shape.data,
++        zodError:
++          error.cause instanceof ZodError ? error.cause.flatten() : null,
++      },
++    };
++  },
++});
++
++export const router = t.router;
++export const publicProcedure = t.procedure;
++
++const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
++  if (!ctx.user) {
++    throw new TRPCError({ code: 'UNAUTHORIZED' });
++  }
++  return next({
++    ctx: {
++      ...ctx,
++      user: ctx.user as User,
++    },
++  });
++});
++
++export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
++
+diff --git a/supabase/config.toml b/supabase/config.toml
+new file mode 100644
+index 0000000..f7a1125
+--- /dev/null
++++ b/supabase/config.toml
+@@ -0,0 +1,86 @@
++# For detailed configuration reference documentation, visit:
++# https://supabase.com/docs/guides/local-development/cli/config
++project_id = "nextjs-starter"
++
++[api]
++enabled = true
++port = 54321
++schemas = ["public", "graphql_public"]
++extra_search_path = ["public", "extensions"]
++max_rows = 1000
++
++[db]
++port = 54322
++shadow_port = 54320
++major_version = 15
++
++[db.pooler]
++enabled = false
++port = 54329
++pool_mode = "transaction"
++default_pool_size = 20
++max_client_conn = 100
++
++[db.migrations]
++schema_paths = []
++
++[db.seed]
++enabled = true
++sql_paths = ["./seed.sql"]
++
++[realtime]
++enabled = true
++
++[studio]
++enabled = true
++port = 54323
++api_url = "http://127.0.0.1"
++
++[inbucket]
++enabled = true
++port = 54324
++
++[storage]
++enabled = true
++file_size_limit = "50MiB"
++
++[auth]
++enabled = true
++site_url = "http://127.0.0.1:3000"
++additional_redirect_urls = ["http://127.0.0.1:3000/auth/callback"]
++jwt_expiry = 3600
++enable_refresh_token_rotation = true
++refresh_token_reuse_interval = 10
++enable_signup = true
++enable_anonymous_sign_ins = false
++enable_manual_linking = false
++minimum_password_length = 6
++password_requirements = ""
++
++[auth.email]
++enable_signup = true
++double_confirm_changes = true
++enable_confirmations = true
++secure_password_change = false
++max_frequency = "1s"
++otp_length = 6
++otp_expiry = 3600
++
++[auth.external.google]
++enabled = true
++client_id = "env(GOOGLE_CLIENT_ID)"
++secret = "env(GOOGLE_CLIENT_SECRET)"
++redirect_uri = ""
++skip_nonce_check = true
++
++[edge_runtime]
++enabled = true
++policy = "oneshot"
++inspector_port = 8083
++deno_version = 1
++
++[analytics]
++enabled = false
++port = 54327
++backend = "postgres"
++
+diff --git a/supabase/migrations/001_initial_schema.sql b/supabase/migrations/001_initial_schema.sql
+new file mode 100644
+index 0000000..0203786
+--- /dev/null
++++ b/supabase/migrations/001_initial_schema.sql
+@@ -0,0 +1,64 @@
++-- =============================================================================
++-- INITIAL SCHEMA - Core Tables and Indexes
++-- =============================================================================
++
++-- User profiles table
++CREATE TABLE IF NOT EXISTS profiles (
++  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
++  email TEXT NOT NULL UNIQUE,
++  name TEXT,
++  timezone TEXT DEFAULT 'UTC',
++  created_at TIMESTAMPTZ DEFAULT NOW(),
++  updated_at TIMESTAMPTZ DEFAULT NOW()
++);
++
++-- Notes table
++CREATE TABLE IF NOT EXISTS notes (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
++  title TEXT NOT NULL,
++  content TEXT DEFAULT '',
++  created_at TIMESTAMPTZ DEFAULT NOW(),
++  updated_at TIMESTAMPTZ DEFAULT NOW()
++);
++
++-- =============================================================================
++-- INDEXES
++-- =============================================================================
++CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
++CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);
++
++-- =============================================================================
++-- PROFILE CREATION TRIGGER
++-- =============================================================================
++
++-- Handle new user creation
++CREATE OR REPLACE FUNCTION handle_new_user() 
++RETURNS TRIGGER AS $$
++BEGIN
++  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = NEW.id) THEN
++    INSERT INTO profiles (id, email, name, timezone)
++    VALUES (
++      NEW.id, 
++      COALESCE(NEW.email, ''), 
++      COALESCE(SPLIT_PART(NEW.email, '@', 1), 'User'),
++      'UTC'
++    );
++  END IF;
++  RETURN NEW;
++EXCEPTION
++  WHEN OTHERS THEN
++    RAISE WARNING 'Error creating profile for user %: %', NEW.id, SQLERRM;
++    RETURN NEW;
++END;
++$$ LANGUAGE plpgsql SECURITY DEFINER;
++
++-- Trigger for new user creation
++DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
++CREATE TRIGGER on_auth_user_created
++  AFTER INSERT ON auth.users
++  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
++
++-- Grant permissions
++GRANT EXECUTE ON FUNCTION handle_new_user() TO authenticated;
++
+diff --git a/supabase/migrations/002_rls_policies.sql b/supabase/migrations/002_rls_policies.sql
+new file mode 100644
+index 0000000..ed49685
+--- /dev/null
++++ b/supabase/migrations/002_rls_policies.sql
+@@ -0,0 +1,48 @@
++-- =============================================================================
++-- ROW LEVEL SECURITY (RLS) POLICIES
++-- =============================================================================
++
++-- =============================================================================
++-- ENABLE RLS
++-- =============================================================================
++ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
++ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
++
++-- =============================================================================
++-- DROP EXISTING POLICIES (for idempotency)
++-- =============================================================================
++DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
++DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
++DROP POLICY IF EXISTS "Service role can insert profiles" ON profiles;
++DROP POLICY IF EXISTS "Users can view own notes" ON notes;
++DROP POLICY IF EXISTS "Users can create own notes" ON notes;
++DROP POLICY IF EXISTS "Users can update own notes" ON notes;
++DROP POLICY IF EXISTS "Users can delete own notes" ON notes;
++
++-- =============================================================================
++-- PROFILE POLICIES
++-- =============================================================================
++CREATE POLICY "Users can view own profile" ON profiles
++  FOR SELECT USING (auth.uid() = profiles.id);
++  
++CREATE POLICY "Users can update own profile" ON profiles
++  FOR UPDATE USING (auth.uid() = profiles.id);
++  
++CREATE POLICY "Service role can insert profiles" ON profiles
++  FOR INSERT WITH CHECK (true);
++
++-- =============================================================================
++-- NOTE POLICIES
++-- =============================================================================
++CREATE POLICY "Users can view own notes" ON notes
++  FOR SELECT USING (auth.uid() = user_id);
++  
++CREATE POLICY "Users can create own notes" ON notes
++  FOR INSERT WITH CHECK (auth.uid() = user_id);
++  
++CREATE POLICY "Users can update own notes" ON notes
++  FOR UPDATE USING (auth.uid() = user_id);
++  
++CREATE POLICY "Users can delete own notes" ON notes
++  FOR DELETE USING (auth.uid() = user_id);
++
+diff --git a/supabase/seed.sql b/supabase/seed.sql
+new file mode 100644
+index 0000000..6d0a2df
+--- /dev/null
++++ b/supabase/seed.sql
+@@ -0,0 +1,35 @@
++-- =============================================================================
++-- SEED DATA - Development and Testing
++-- =============================================================================
++-- This file seeds the database with example data for development.
++-- Run with: npx supabase db reset (automatically runs seed.sql)
++-- =============================================================================
++
++-- Note: auth.users is managed by Supabase Auth, so we can't directly insert
++-- Instead, create users through the signup flow or Supabase dashboard
++
++-- Example: If you have a test user (create via Supabase dashboard first)
++-- Then you can seed their data:
++
++DO $$
++DECLARE
++  v_user_id UUID;
++BEGIN
++  -- Get a test user (or create one via dashboard first)
++  SELECT id INTO v_user_id FROM auth.users LIMIT 1;
++  
++  IF v_user_id IS NOT NULL THEN
++    -- Seed example notes
++    INSERT INTO notes (user_id, title, content) VALUES
++      (v_user_id, 'Welcome to the app', 'This is your first note!'),
++      (v_user_id, 'Getting Started', 'Here are some tips for using this app...'),
++      (v_user_id, 'Example Note', 'You can create, edit, and delete notes.'),
++      (v_user_id, 'TypeScript is Great', 'Type-safe from database to UI!'),
++      (v_user_id, 'Supabase Rocks', 'PostgreSQL + Auth + RLS = ❤️');
++      
++    RAISE NOTICE 'Seeded 5 example notes for user %', v_user_id;
++  ELSE
++    RAISE NOTICE 'No users found. Create a user first via signup or Supabase dashboard.';
++  END IF;
++END $$;
++
+diff --git a/tsconfig.json b/tsconfig.json
+new file mode 100644
+index 0000000..e421716
+--- /dev/null
++++ b/tsconfig.json
+@@ -0,0 +1,30 @@
++{
++  "compilerOptions": {
++    "target": "ES2017",
++    "lib": ["dom", "dom.iterable", "esnext"],
++    "allowJs": true,
++    "skipLibCheck": true,
++    "strict": true,
++    "noEmit": true,
++    "esModuleInterop": true,
++    "module": "esnext",
++    "moduleResolution": "bundler",
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "jsx": "preserve",
++    "incremental": true,
++    "plugins": [
++      {
++        "name": "next"
++      }
++    ],
++    "paths": {
++      "@/*": ["./src/*"],
++      "@/components/*": ["./src/components/*"],
++      "@/lib/*": ["./src/lib/*"]
++    }
++  },
++  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
++  "exclude": ["node_modules"]
++}
++
